@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 灵动岛选项按压反馈（v1.4.62）：岛是 22dp 圆角胶囊，系统方角涟漪会从
      圆角外戳出来（按压残影）。这里给每个选项一个 22dp 圆角遮罩的涟漪，
-     按压高亮始终被裁在胶囊弧线内。 -->
+     按压高亮始终被裁在胶囊弧线内。
+     涟漪色随主题（见 island_ripple）：暗底用亮白，亮底用深墨。
+
+     ⚠️ <ripple> 的 <item> 是**遮罩(mask)**：它的 alpha 决定"哪里出现波纹"，
+        波纹颜色由 android:color 决定。mask 若写成透明色，整片区域对波纹
+        不可见 —— 表现就是按压毫无反馈。这里必须是不透明白色。 -->
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
-    android:color="#2EFFFFFF">
+    android:color="@color/island_ripple">
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="22dp" />
-            <solid android:color="@android:color/transparent" />
+            <solid android:color="#FFFFFFFF" />
         </shape>
     </item>
 </ripple>

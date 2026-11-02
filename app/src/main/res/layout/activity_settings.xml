@@ -469,7 +469,7 @@
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:padding="8dp"
-                    android:src="@drawable/ic_export"
+                    android:src="@drawable/ic_restore"
                     android:background="@drawable/bg_icon_chip_soft"
                     android:tint="@color/accent" />
 
@@ -595,7 +595,7 @@
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:padding="8dp"
-                    android:src="@drawable/ic_download"
+                    android:src="@drawable/ic_export"
                     android:background="@drawable/bg_icon_chip_soft"
                     android:tint="@color/success" />
 
@@ -665,7 +665,7 @@
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:padding="8dp"
-                    android:src="@drawable/ic_download"
+                    android:src="@drawable/ic_export"
                     android:background="@drawable/bg_icon_chip_soft"
                     android:tint="@color/accent" />
 
