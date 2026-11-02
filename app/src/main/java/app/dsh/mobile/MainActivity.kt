@@ -910,11 +910,43 @@ runCatching { (application as DshApp).supervisor.webUrl() }
         val bmp = runCatching {
             android.graphics.BitmapFactory.decodeFile(file.absolutePath)
         }.getOrNull() ?: return
-        // 圆形裁切：图片多半是方形（图标/照片），直接铺上去会破坏"圆点"观感
-        val round = android.graphics.drawable.RoundedBitmapDrawableFactory
-            .create(resources, bmp).apply { isCircular = true }
-        dot.background = round
+        // 圆形裁切：素材多半是方形（图标/照片），直接铺上去会破坏"圆点"观感。
+        // 用 BitmapShader + Canvas 手画圆，纯系统 API —— 不引入任何依赖，
+        // 也不必关心 androidx.core 的传递版本（上一版误写成
+        // android.graphics.drawable.RoundedBitmapDrawableFactory，包名不对导致
+        // 编译失败；那个类的正确包名是 androidx.core.graphics.drawable）。
+        val round = circularBitmap(bmp) ?: return
+        dot.background = android.graphics.drawable.BitmapDrawable(resources, round)
     }
+
+    /** 把任意位图裁成居中的正方形再描一个圆形，返回新的圆形位图（失败返回 null）。 */
+    private fun circularBitmap(src: android.graphics.Bitmap): android.graphics.Bitmap? =
+        runCatching {
+            val size = minOf(src.width, src.height)
+            // 先居中裁成正方形，避免非正方形素材被压扁
+            val square = android.graphics.Bitmap.createBitmap(
+                src,
+                (src.width - size) / 2,
+                (src.height - size) / 2,
+                size,
+                size,
+            )
+            val out = android.graphics.Bitmap.createBitmap(
+                size, size, android.graphics.Bitmap.Config.ARGB_8888,
+            )
+            val canvas = android.graphics.Canvas(out)
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                shader = android.graphics.BitmapShader(
+                    square,
+                    android.graphics.Shader.TileMode.CLAMP,
+                    android.graphics.Shader.TileMode.CLAMP,
+                )
+            }
+            val r = size / 2f
+            canvas.drawCircle(r, r, r, paint)
+            if (square !== src) square.recycle()
+            out
+        }.getOrNull()
 
     private fun setupHandleBar() {
         val handle = findViewById<View>(R.id.handleBar)
