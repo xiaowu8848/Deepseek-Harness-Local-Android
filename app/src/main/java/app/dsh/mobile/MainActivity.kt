@@ -2078,11 +2078,29 @@ runCatching { (application as DshApp).supervisor.webUrl() }
                 }
             }
             // 工具栏用 wantRowTop（贴顶），圆用 wantTop（对齐孔中心）—— 两者不再混用。
-            row.layoutParams?.let { lp ->
+            //
+            // ⚠️ 位置与高度设在**外层 statusBarOverlay** 上，不是里面的 statusBarRow：
+            // v1.5.x 给胶囊套了一层 FrameLayout 作为贴纸图层，overlay 自己带
+            // layout_marginTop="10dp"、高度固定 44dp。若再把 topMargin 加到内层 row，
+            // 两段边距叠加 + row 超出 44dp 容器 → 胶囊下半部分被裁掉（用户实测）。
+            val overlay = findViewById<View>(R.id.statusBarOverlay)
+            overlay?.layoutParams?.let { lp ->
                 val m = lp as? android.view.ViewGroup.MarginLayoutParams
                 if (m != null && (m.topMargin != wantRowTop || lp.height != wantRowH)) {
                     m.topMargin = wantRowTop
                     lp.height = wantRowH
+                    overlay.layoutParams = lp
+                }
+            }
+            // 内层 row 撑满 overlay，不再自己管位置（否则又会和上面打架）
+            row.layoutParams?.let { lp ->
+                if (lp.height != android.view.ViewGroup.LayoutParams.MATCH_PARENT) {
+                    lp.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    val m = lp as? android.view.ViewGroup.MarginLayoutParams
+                    if (m != null) {
+                        m.topMargin = 0
+                        m.marginStart = 0
+                    }
                     row.layoutParams = lp
                 }
             }

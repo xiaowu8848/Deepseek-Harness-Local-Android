@@ -132,13 +132,13 @@ open class ThemedActivity : Activity() {
             restoreCardOpacity(root)
             return
         }
-        val bmp = runCatching {
-            android.graphics.BitmapFactory.decodeFile(file.absolutePath)
-        }.getOrNull() ?: return
-
-        // 模糊：先降采样近似（见 ImageFx），再按用户设定不透明度铺上去。
-        // 两者都实时套用，改滑块立刻能看出效果。
-        val shown = ImageFx.blur(bmp, CustomVisualPref.settingsBgBlur(this))
+        // 真高斯模糊 + 缓存：同一张图同一强度只算一次，否则每次 onResume
+        // 都要跑一遍逐像素卷积，切页面会明显卡。
+        val shown = ImageFx.cachedBlur(
+            this,
+            file,
+            CustomVisualPref.settingsBgBlur(this),
+        ) ?: return
         // 注意：apply { } 里的 this 是 BitmapDrawable，不是 Activity ——
         // 需要 Context 的调用必须提前算好，否则会把 Drawable 当 Context 传进去。
         val bgAlpha = ImageFx.alphaOf(CustomVisualPref.settingsBgAlpha(this))

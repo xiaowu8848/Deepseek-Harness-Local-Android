@@ -92,18 +92,16 @@ class SettingsBgActivity : ThemedActivity() {
         seekBlur.progress = blur
 
         val file = CustomVisualPref.settingsBgFile(this)
-        val bmp: Bitmap? = file?.let {
-            runCatching { android.graphics.BitmapFactory.decodeFile(it.absolutePath) }.getOrNull()
-        }
+        // 预览用更小的输入尺寸：拖滑块时每档都要重算，1080 宽会掉帧
+        val bmp: Bitmap? = file?.let { ImageFx.cachedBlur(this, it, blur, ImageFx.PREVIEW_EDGE) }
         if (bmp == null) {
             imgPreview.setImageDrawable(null)
             imgPreview.visibility = View.GONE
             txtHint.setText(R.string.setting_image_none)
             return
         }
-        val shown = ImageFx.blur(bmp, blur)
         imgPreview.setImageDrawable(
-            BitmapDrawable(resources, shown).apply {
+            BitmapDrawable(resources, bmp).apply {
                 this.alpha = ImageFx.alphaOf(alpha)
             },
         )
