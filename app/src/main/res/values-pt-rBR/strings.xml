@@ -1127,4 +1127,10 @@ A aplicação será reiniciada pelo sistema para recarregar a tabela de grupos �
     <string name="setting_dot_size">Tamanho</string>
     <string name="setting_dot_size_sub">Comprimento da borda do ponto quando recolhido</string>
     <string name="setting_dot_size_value">%d dp</string>
+    <string name="setting_bg_alpha">Opacidade</string>
+    <string name="setting_bg_alpha_sub">Intensidade com que a imagem de fundo aparece</string>
+    <string name="setting_bg_alpha_value">%d%%</string>
+    <string name="setting_bg_blur">Desfoque</string>
+    <string name="setting_bg_blur_sub">Valores maiores desfocam mais o fundo</string>
+    <string name="setting_bg_blur_value">%d</string>
 </resources>

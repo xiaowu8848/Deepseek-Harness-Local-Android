@@ -1173,4 +1173,10 @@ Die App wird vom System neu gestartet, um die Gruppentabelle neu zu laden — da
     <string name="setting_dot_size">Größe</string>
     <string name="setting_dot_size_sub">Kantenlänge des Punkts im eingeklappten Zustand</string>
     <string name="setting_dot_size_value">%d dp</string>
+    <string name="setting_bg_alpha">Deckkraft</string>
+    <string name="setting_bg_alpha_sub">Wie stark das Hintergrundbild durchscheint</string>
+    <string name="setting_bg_alpha_value">%d%%</string>
+    <string name="setting_bg_blur">Unschärfe</string>
+    <string name="setting_bg_blur_sub">Höhere Werte verwischen den Hintergrund stärker</string>
+    <string name="setting_bg_blur_value">%d</string>
 </resources>

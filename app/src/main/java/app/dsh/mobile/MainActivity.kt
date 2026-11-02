@@ -902,7 +902,10 @@ runCatching { (application as DshApp).supervisor.webUrl() }
      * 收起态灵动岛的渲染：统一交给 [IslandDotRenderer]，与设置子页里的预览
      * 用同一套代码，保证"预览长什么样、收起就什么样"。
      */
-    private fun applyIslandDotImage(handle: View) = IslandDotRenderer.apply(this, handle)
+    private fun applyIslandDotImage(handle: View) =
+        // applySize = false：真机圆点的尺寸由 applyIslandInsets 统一管理
+        // （那里还要考虑挖孔对齐与不溢出屏幕），两处都设会互相覆盖。
+        IslandDotRenderer.apply(this, handle, applySize = false)
 
     private fun setupHandleBar() {
         val handle = findViewById<View>(R.id.handleBar)
@@ -1806,7 +1809,9 @@ runCatching { (application as DshApp).supervisor.webUrl() }
         val d = resources.displayMetrics.density
         val baseTop = (10 * d).toInt()
         val rowH = (44 * d).toInt()
-        val handleH = (26 * d).toInt()
+        // 收起态圆点边长：默认 26dp，可由「外观 → 收起态状态栏」调整。
+        // 这里作为基准尺寸，下面的 wantDot 再按屏幕安全边界收敛。
+        val handleH = (CustomVisualPref.islandDotSizeDp(this) * d).toInt()
 
         root.setOnApplyWindowInsetsListener { _, insets ->
             val immersive = immersiveEnabled(this@MainActivity)
@@ -1906,9 +1911,10 @@ runCatching { (application as DshApp).supervisor.webUrl() }
             } else {
                 Int.MAX_VALUE
             }
-            val wantDot = if (immersive) {
-                maxOf(handleH, minOf(holeSize, maxDotNoOverflow))
-            } else handleH
+            // 尺寸以用户偏好为准（handleH 即偏好值），仅收敛到"不溢出屏幕顶部"的上限。
+            // 历史实现会在沉浸态强制放大到能罩住挖孔，那样用户调小就不生效 ——
+            // 尺寸既然开放给用户，就以用户意愿优先。
+            val wantDot = handleH.coerceAtMost(maxDotNoOverflow)
             // 圆心对齐孔中心：top = 中心Y - 半径。clamp ≥0（孔贴顶时圆也贴顶）。
             val wantTop = when {
                 !immersive -> statusTop + baseTop

@@ -25,6 +25,28 @@ object CustomVisualPref {
     /** 收起态圆点图（持久化的文件名，空 = 用默认小亮核） */
     private const val KEY_ISLAND_DOT = "island_dot_file"
 
+    /** 设置页背景图的不透明度（0~100）与模糊强度（0~24）。 */
+    const val BG_ALPHA_DEFAULT = 100
+    const val BG_BLUR_DEFAULT = 0
+    const val BG_BLUR_MAX = 24
+
+    private const val KEY_BG_ALPHA = "settings_bg_alpha"
+    private const val KEY_BG_BLUR = "settings_bg_blur"
+
+    fun settingsBgAlpha(context: Context): Int =
+        prefs(context).getInt(KEY_BG_ALPHA, BG_ALPHA_DEFAULT).coerceIn(0, 100)
+
+    fun setSettingsBgAlpha(context: Context, alpha: Int) {
+        prefs(context).edit().putInt(KEY_BG_ALPHA, alpha.coerceIn(0, 100)).apply()
+    }
+
+    fun settingsBgBlur(context: Context): Int =
+        prefs(context).getInt(KEY_BG_BLUR, BG_BLUR_DEFAULT).coerceIn(0, BG_BLUR_MAX)
+
+    fun setSettingsBgBlur(context: Context, blur: Int) {
+        prefs(context).edit().putInt(KEY_BG_BLUR, blur.coerceIn(0, BG_BLUR_MAX)).apply()
+    }
+
     /** 收起态圆点的显示形状：圆形裁切，或保留原图的方形。 */
     enum class DotShape { CIRCLE, SQUARE }
 

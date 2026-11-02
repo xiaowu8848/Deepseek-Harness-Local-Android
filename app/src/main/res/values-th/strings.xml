@@ -1109,4 +1109,10 @@
     <string name="setting_dot_size">ขนาด</string>
     <string name="setting_dot_size_sub">ความยาวด้านของจุดเมื่อย่อ</string>
     <string name="setting_dot_size_value">%d dp</string>
+    <string name="setting_bg_alpha">ความทึบ</string>
+    <string name="setting_bg_alpha_sub">ระดับที่ภาพพื้นหลังแสดงออกมา</string>
+    <string name="setting_bg_alpha_value">%d%%</string>
+    <string name="setting_bg_blur">ความเบลอ</string>
+    <string name="setting_bg_blur_sub">ค่ายิ่งสูงพื้นหลังยิ่งเบลอ</string>
+    <string name="setting_bg_blur_value">%d</string>
 </resources>

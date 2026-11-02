@@ -36,19 +36,22 @@ object IslandDotRenderer {
         container: View,
         sizeDpOverride: Int? = null,
         centerInParent: Boolean = false,
+        applySize: Boolean = true,
     ) {
-        val sizeDp = sizeDpOverride ?: CustomVisualPref.islandDotSizeDp(context)
-        val px = (sizeDp * context.resources.displayMetrics.density).toInt()
-        container.layoutParams = container.layoutParams.apply {
-            width = px
-            height = px
-            // 预览框里必须居中；真机的 handleBar 用 layout_gravity="top|center_horizontal"
-            // 自己控制位置，这里不动它，否则会被拉到垂直居中、盖到状态栏上。
-            if (centerInParent && this is android.widget.FrameLayout.LayoutParams) {
-                gravity = android.view.Gravity.CENTER
+        if (applySize) {
+            val sizeDp = sizeDpOverride ?: CustomVisualPref.islandDotSizeDp(context)
+            val px = (sizeDp * context.resources.displayMetrics.density).toInt()
+            container.layoutParams = container.layoutParams.apply {
+                width = px
+                height = px
+                // 预览框里必须居中；真机的 handleBar 用 layout_gravity="top|center_horizontal"
+                // 自己控制位置，这里不动它，否则会被拉到垂直居中、盖到状态栏上。
+                if (centerInParent && this is android.widget.FrameLayout.LayoutParams) {
+                    gravity = android.view.Gravity.CENTER
+                }
             }
+            container.requestLayout()
         }
-        container.requestLayout()
 
         val core = (container as? ViewGroup)?.getChildAt(0)
 
