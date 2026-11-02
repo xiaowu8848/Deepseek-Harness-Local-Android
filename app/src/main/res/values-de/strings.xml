@@ -1195,4 +1195,20 @@ Die App wird vom System neu gestartet, um die Gruppentabelle neu zu laden — da
     <string name="action_clear_stickers">Alle löschen</string>
     <string name="action_remove_sticker">Sticker entfernt</string>
     <string name="setting_status_bar_sub">Hintergrund, Sticker und Symbol im Punkt-Zustand</string>
+    <string name="ob_wizard_language_title">Sprache wählen</string>
+    <string name="ob_wizard_language_desc">Kann später in den Einstellungen geändert werden.</string>
+    <string name="ob_wizard_orientation_title">Standardausrichtung</string>
+    <string name="ob_wizard_orientation_desc">Hochformat für einhändige Nutzung, Querformat aktiviert das Desktop-Layout.</string>
+    <string name="ob_wizard_theme_title">Erscheinungsbild</string>
+    <string name="ob_wizard_theme_desc">Dem System folgen oder hell / dunkel festlegen.</string>
+    <string name="ob_wizard_accent_title">Akzentfarbe</string>
+    <string name="ob_wizard_accent_desc">Für Schaltflächen, Hervorhebungen und Statustext.</string>
+    <string name="ob_wizard_priv_title">Ausführungsmodus</string>
+    <string name="ob_wizard_priv_desc">Bestimmt, worauf der Agent zugreifen darf. Normal wird empfohlen.</string>
+    <string name="ob_wizard_done_title">Alles bereit</string>
+    <string name="ob_wizard_done_desc">Deine Auswahl ist gespeichert. Tippe unten, um zu starten.</string>
+    <string name="ob_wizard_back">Zurück</string>
+    <string name="ob_wizard_next">Weiter</string>
+    <string name="ob_wizard_start">Loslegen</string>
+    <string name="ob_wizard_step_fmt">%1$d / %2$d</string>
 </resources>

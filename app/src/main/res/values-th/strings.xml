@@ -1131,4 +1131,20 @@
     <string name="action_clear_stickers">ล้างทั้งหมด</string>
     <string name="action_remove_sticker">ลบสติกเกอร์แล้ว</string>
     <string name="setting_status_bar_sub">พื้นหลัง สติกเกอร์ และไอคอนแบบย่อ</string>
+    <string name="ob_wizard_language_title">เลือกภาษา</string>
+    <string name="ob_wizard_language_desc">เปลี่ยนได้ภายหลังในการตั้งค่า</string>
+    <string name="ob_wizard_orientation_title">ทิศทางเริ่มต้น</string>
+    <string name="ob_wizard_orientation_desc">แนวตั้งเหมาะกับการใช้มือเดียว แนวนอนจะเปิดเลย์เอาต์เดสก์ท็อป</string>
+    <string name="ob_wizard_theme_title">ธีม</string>
+    <string name="ob_wizard_theme_desc">ตามระบบ หรือกำหนดสว่าง / มืด</string>
+    <string name="ob_wizard_accent_title">สีเน้น</string>
+    <string name="ob_wizard_accent_desc">ใช้กับปุ่ม ไฮไลต์ และข้อความสถานะ</string>
+    <string name="ob_wizard_priv_title">โหมดการทำงาน</string>
+    <string name="ob_wizard_priv_desc">กำหนดสิ่งที่ AI เข้าถึงได้ แนะนำโหมดปกติ</string>
+    <string name="ob_wizard_done_title">พร้อมแล้ว</string>
+    <string name="ob_wizard_done_desc">บันทึกตัวเลือกของคุณแล้ว แตะด้านล่างเพื่อเริ่ม</string>
+    <string name="ob_wizard_back">ย้อนกลับ</string>
+    <string name="ob_wizard_next">ถัดไป</string>
+    <string name="ob_wizard_start">เริ่มใช้งาน</string>
+    <string name="ob_wizard_step_fmt">%1$d / %2$d</string>
 </resources>

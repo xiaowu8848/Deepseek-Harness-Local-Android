@@ -1196,4 +1196,20 @@
     <string name="action_clear_stickers">清空贴纸</string>
     <string name="action_remove_sticker">贴纸已移除</string>
     <string name="setting_status_bar_sub">背景图、贴纸与收起态图标</string>
+    <string name="ob_wizard_language_title">选择语言</string>
+    <string name="ob_wizard_language_desc">之后随时可以在设置里更改。</string>
+    <string name="ob_wizard_orientation_title">默认显示方向</string>
+    <string name="ob_wizard_orientation_desc">竖屏适合单手操作，横屏会启用桌面布局。</string>
+    <string name="ob_wizard_theme_title">外观主题</string>
+    <string name="ob_wizard_theme_desc">跟随系统，或固定浅色 / 深色。</string>
+    <string name="ob_wizard_accent_title">配色方案</string>
+    <string name="ob_wizard_accent_desc">用于按钮、高亮与状态文字。</string>
+    <string name="ob_wizard_priv_title">运行模式</string>
+    <string name="ob_wizard_priv_desc">决定 AI 能触及的范围，推荐普通模式。</string>
+    <string name="ob_wizard_done_title">准备就绪</string>
+    <string name="ob_wizard_done_desc">你的选择已保存，点击下方开始使用。</string>
+    <string name="ob_wizard_back">上一步</string>
+    <string name="ob_wizard_next">下一步</string>
+    <string name="ob_wizard_start">开始使用</string>
+    <string name="ob_wizard_step_fmt">%1$d / %2$d</string>
 </resources>

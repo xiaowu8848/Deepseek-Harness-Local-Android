@@ -1189,4 +1189,20 @@ The app will be restarted by the system to reload its group table — that is no
     <string name="action_clear_stickers">Clear all</string>
     <string name="action_remove_sticker">Sticker removed</string>
     <string name="setting_status_bar_sub">Bar background, stickers and collapsed icon</string>
+    <string name="ob_wizard_language_title">Choose your language</string>
+    <string name="ob_wizard_language_desc">You can change this later in Settings.</string>
+    <string name="ob_wizard_orientation_title">Default orientation</string>
+    <string name="ob_wizard_orientation_desc">Portrait suits one-handed use; landscape enables the desktop layout.</string>
+    <string name="ob_wizard_theme_title">Appearance</string>
+    <string name="ob_wizard_theme_desc">Follow the system, or pin light / dark.</string>
+    <string name="ob_wizard_accent_title">Accent colour</string>
+    <string name="ob_wizard_accent_desc">Used for buttons, highlights and status text.</string>
+    <string name="ob_wizard_priv_title">Run mode</string>
+    <string name="ob_wizard_priv_desc">Decides what the agent is allowed to touch. Normal is recommended.</string>
+    <string name="ob_wizard_done_title">All set</string>
+    <string name="ob_wizard_done_desc">Your choices are saved. Tap below to get started.</string>
+    <string name="ob_wizard_back">Back</string>
+    <string name="ob_wizard_next">Next</string>
+    <string name="ob_wizard_start">Get started</string>
+    <string name="ob_wizard_step_fmt">%1$d / %2$d</string>
 </resources>

@@ -1149,4 +1149,20 @@ A aplicação será reiniciada pelo sistema para recarregar a tabela de grupos �
     <string name="action_clear_stickers">Limpar tudo</string>
     <string name="action_remove_sticker">Adesivo removido</string>
     <string name="setting_status_bar_sub">Fundo, adesivos e ícone recolhido</string>
+    <string name="ob_wizard_language_title">Escolha o idioma</string>
+    <string name="ob_wizard_language_desc">Você pode mudar depois nas configurações.</string>
+    <string name="ob_wizard_orientation_title">Orientação padrão</string>
+    <string name="ob_wizard_orientation_desc">Retrato para uso com uma mão; paisagem ativa o layout de desktop.</string>
+    <string name="ob_wizard_theme_title">Aparência</string>
+    <string name="ob_wizard_theme_desc">Seguir o sistema ou fixar claro / escuro.</string>
+    <string name="ob_wizard_accent_title">Cor de destaque</string>
+    <string name="ob_wizard_accent_desc">Usada em botões, destaques e textos de status.</string>
+    <string name="ob_wizard_priv_title">Modo de execução</string>
+    <string name="ob_wizard_priv_desc">Define o que o agente pode acessar. O normal é recomendado.</string>
+    <string name="ob_wizard_done_title">Tudo pronto</string>
+    <string name="ob_wizard_done_desc">Suas escolhas foram salvas. Toque abaixo para começar.</string>
+    <string name="ob_wizard_back">Voltar</string>
+    <string name="ob_wizard_next">Avançar</string>
+    <string name="ob_wizard_start">Começar</string>
+    <string name="ob_wizard_step_fmt">%1$d / %2$d</string>
 </resources>
