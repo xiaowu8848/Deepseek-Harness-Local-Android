@@ -182,9 +182,6 @@ class AppearanceActivity : ThemedActivity() {
         } else {
             bgPreview?.visibility = View.GONE
         }
-
-        findViewById<TextView>(R.id.valIslandDotImage)?.text =
-            if (CustomVisualPref.hasIslandDot(this)) yes else none
     }
 
     private fun orientLabel(mode: OrientationMode): Int = when (mode) {
