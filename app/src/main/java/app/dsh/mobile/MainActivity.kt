@@ -14,9 +14,11 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -962,8 +964,13 @@ runCatching { (application as DshApp).supervisor.webUrl() }
                 val iv = ImageView(this)
                 iv.setImageBitmap(stickerBmp)
                 iv.layoutParams = android.widget.FrameLayout.LayoutParams(sizePx, sizePx)
-                iv.x = (st.xRatio * w - sizePx / 2f).coerceIn(0f, (w - sizePx).toFloat())
-                iv.y = (st.yRatio * h - sizePx / 2f).coerceIn(0f, (h - sizePx).toFloat())
+                // 上限必须夹到 >= 0：贴纸边长可以大于容器高（32dp 贴纸 vs 44dp 高，
+                // 放大到 64dp 时 h-sizePx 为负），coerceIn(0f, 负数) 会直接抛
+                // IllegalArgumentException 把主界面搞崩。
+                iv.x = (st.xRatio * w - sizePx / 2f)
+                    .coerceIn(0f, maxOf(0f, (w - sizePx).toFloat()))
+                iv.y = (st.yRatio * h - sizePx / 2f)
+                    .coerceIn(0f, maxOf(0f, (h - sizePx).toFloat()))
                 iv.tag = stickerTag
                 overlay.addView(iv)
             }

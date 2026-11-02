@@ -115,8 +115,11 @@ class ExpandedStatusBarActivity : ThemedActivity() {
         val w = preview.width
         val h = preview.height
         if (w <= 0 || h <= 0) return
-        v.x = (sticker.xRatio * w - sizePx / 2f).coerceIn(0f, (w - sizePx).toFloat())
-        v.y = (sticker.yRatio * h - sizePx / 2f).coerceIn(0f, (h - sizePx).toFloat())
+        // 上限夹到 >= 0：贴纸可以比预览容器还高，负的上界会让 coerceIn 抛异常
+        v.x = (sticker.xRatio * w - sizePx / 2f)
+            .coerceIn(0f, maxOf(0f, (w - sizePx).toFloat()))
+        v.y = (sticker.yRatio * h - sizePx / 2f)
+            .coerceIn(0f, maxOf(0f, (h - sizePx).toFloat()))
     }
 
     /** 拖动贴纸：跟随手指，松手后把新位置写回偏好。 */
