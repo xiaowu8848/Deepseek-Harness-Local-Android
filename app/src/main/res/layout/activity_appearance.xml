@@ -569,6 +569,16 @@
                 android:layout_marginTop="2dp" />
                 </LinearLayout>
 
+                <!-- 背景图预览缩略图：有图时显示，无图时隐藏 -->
+                <ImageView
+                android:id="@+id/imgSettingsBgPreview"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="8dp"
+                android:scaleType="centerCrop"
+                android:background="@drawable/bg_icon_chip_soft"
+                android:visibility="gone" />
+
                 <TextView
                 android:id="@+id/valSettingsBg"
                 android:layout_width="wrap_content"

@@ -25,6 +25,35 @@ object CustomVisualPref {
     /** 收起态圆点图（持久化的文件名，空 = 用默认小亮核） */
     private const val KEY_ISLAND_DOT = "island_dot_file"
 
+    /** 收起态圆点的显示形状：圆形裁切，或保留原图的方形。 */
+    enum class DotShape { CIRCLE, SQUARE }
+
+    /** 收起态圆点边长（dp）：可调，默认 26（与布局里 handleBar 原始尺寸一致）。 */
+    const val DOT_SIZE_MIN_DP = 26
+    const val DOT_SIZE_MAX_DP = 72
+    const val DOT_SIZE_DEFAULT_DP = 26
+
+    private const val KEY_DOT_SHAPE = "island_dot_shape"
+    private const val KEY_DOT_SIZE = "island_dot_size_dp"
+
+    fun islandDotShape(context: Context): DotShape {
+        val raw = prefs(context).getString(KEY_DOT_SHAPE, null)
+        return DotShape.entries.firstOrNull { it.name == raw } ?: DotShape.CIRCLE
+    }
+
+    fun setIslandDotShape(context: Context, shape: DotShape) {
+        prefs(context).edit().putString(KEY_DOT_SHAPE, shape.name).apply()
+    }
+
+    fun islandDotSizeDp(context: Context): Int =
+        prefs(context).getInt(KEY_DOT_SIZE, DOT_SIZE_DEFAULT_DP)
+            .coerceIn(DOT_SIZE_MIN_DP, DOT_SIZE_MAX_DP)
+
+    fun setIslandDotSizeDp(context: Context, dp: Int) {
+        prefs(context).edit()
+            .putInt(KEY_DOT_SIZE, dp.coerceIn(DOT_SIZE_MIN_DP, DOT_SIZE_MAX_DP)).apply()
+    }
+
     /** 素材目录：随 App 私有数据一起被备份，卸载即清 */
     private fun dir(context: Context): File =
         File(context.filesDir, "appearance").apply { if (!exists()) mkdirs() }

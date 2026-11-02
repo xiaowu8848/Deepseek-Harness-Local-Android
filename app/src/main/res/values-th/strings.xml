@@ -1097,10 +1097,16 @@
     <string name="action_view">ดู</string>
     <string name="setting_settings_bg">ภาพพื้นหลังหน้าตั้งค่า</string>
     <string name="setting_settings_bg_sub">เลือกภาพเพื่อใช้เป็นพื้นหลังหน้าตั้งค่า</string>
-    <string name="setting_island_dot_image">ไอคอนเกาะแบบย่อ</string>
-    <string name="setting_island_dot_image_sub">ภาพที่กำหนดเองเมื่อแถบสถานะย่อเหลือจุดเดียว</string>
     <string name="action_choose_image">เลือกภาพ</string>
     <string name="action_remove_image">ลบออก</string>
     <string name="setting_image_none">ยังไม่ได้ตั้งค่า</string>
     <string name="setting_image_set">ตั้งค่าแล้ว</string>
+    <string name="setting_island_dot_image">แถบสถานะแบบย่อ</string>
+    <string name="setting_island_dot_image_sub">ไอคอนที่แสดงเมื่อแถบสถานะย่อเหลือจุดเดียว</string>
+    <string name="setting_dot_shape">รูปร่าง</string>
+    <string name="setting_dot_shape_circle">วงกลม (ครอบตัด)</string>
+    <string name="setting_dot_shape_square">สี่เหลี่ยม (คงภาพเดิม)</string>
+    <string name="setting_dot_size">ขนาด</string>
+    <string name="setting_dot_size_sub">ความยาวด้านของจุดเมื่อย่อ</string>
+    <string name="setting_dot_size_value">%d dp</string>
 </resources>

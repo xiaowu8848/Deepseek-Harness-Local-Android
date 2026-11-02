@@ -1115,10 +1115,16 @@ A aplicação será reiniciada pelo sistema para recarregar a tabela de grupos �
     <string name="action_view">Ver</string>
     <string name="setting_settings_bg">Imagem de fundo das configurações</string>
     <string name="setting_settings_bg_sub">Escolha uma imagem para ficar atrás da página de configurações</string>
-    <string name="setting_island_dot_image">Ícone da ilha recolhida</string>
-    <string name="setting_island_dot_image_sub">Imagem personalizada exibida quando a barra de status recolhe para um ponto</string>
     <string name="action_choose_image">Escolher imagem</string>
     <string name="action_remove_image">Remover</string>
     <string name="setting_image_none">Não definido</string>
     <string name="setting_image_set">Definido</string>
+    <string name="setting_island_dot_image">Barra de status recolhida</string>
+    <string name="setting_island_dot_image_sub">Ícone exibido quando a barra de status recolhe para um ponto</string>
+    <string name="setting_dot_shape">Forma</string>
+    <string name="setting_dot_shape_circle">Círculo (recortado)</string>
+    <string name="setting_dot_shape_square">Quadrado (original)</string>
+    <string name="setting_dot_size">Tamanho</string>
+    <string name="setting_dot_size_sub">Comprimento da borda do ponto quando recolhido</string>
+    <string name="setting_dot_size_value">%d dp</string>
 </resources>

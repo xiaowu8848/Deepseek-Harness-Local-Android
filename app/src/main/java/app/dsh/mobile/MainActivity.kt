@@ -317,6 +317,9 @@ runCatching { (application as DshApp).supervisor.webUrl() }
         AppUpdateScheduler.onForeground(this)
         UpdateDialogs.maybeShow(this)
         handleOpenInstallIntent()
+        // 外观 → 收起态状态栏改完返回本页时，立即按新图片/形状/尺寸重绘，
+        // 不必等用户手动收起再展开才看到效果
+        runCatching { findViewById<View>(R.id.handleBar)?.let { applyIslandDotImage(it) } }
         val currentTheme = ThemePref.get(this)
         if (appliedTheme != null && appliedTheme != currentTheme) {
             appliedTheme = currentTheme
@@ -898,25 +901,44 @@ runCatching { (application as DshApp).supervisor.webUrl() }
     /**
      * 收起态灵动岛（26dp 正圆）的自定义图标（外观与显示 → 收起态圆点图标）。
      *
-     * 默认外观是「深色圆 + 中间 8dp 小亮核」（bg_island_core_dot）。用户设了自定义图片时，
-     * 用图片替换那个小亮核（而不是整个圆）—— 这样圆点的尺寸、位置、点击/拖拽手感
-     * 全部不变，只换视觉标识，最小化对既有交互的影响。
+     * 用户设了图之后，**整个 26dp 圆点就是那张图** —— 不再保留默认的
+     * 「深色圆 + 中心 8dp 小亮核」。实现上把圆点容器的背景换成圆形裁切的图，
+     * 并把原来那个小亮核隐藏；没设图时恢复默认外观（bg_dynamic_island_dot + 小核）。
      *
-     * 图片已在导入时缩到 216px 以内（见 CustomVisualPref），这里直接解码即可。
+     * 为什么要还原而不是直接 `?: return`：用户可能在外观页「移除」图片后回到主界面，
+     * 此处不还原就会一直顶着旧图。
      */
     private fun applyIslandDotImage(handle: View) {
-        val file = CustomVisualPref.islandDotFile(this) ?: return
-        val dot = (handle as? android.view.ViewGroup)?.getChildAt(0) ?: return
+        val core = (handle as? android.view.ViewGroup)?.getChildAt(0)
+
+        // 尺寸对「默认外观」和「自定义图」都生效，所以先统一设好
+        val sizeDp = CustomVisualPref.islandDotSizeDp(this)
+        val px = (sizeDp * resources.displayMetrics.density).toInt()
+        handle.layoutParams = handle.layoutParams.apply {
+            width = px
+            height = px
+        }
+        handle.requestLayout()
+
+        val file = CustomVisualPref.islandDotFile(this)
+        if (file == null) {
+            // 恢复默认：外圈小光环 + 中心小亮核
+            handle.background = getDrawable(R.drawable.bg_dynamic_island_dot)
+            core?.visibility = View.VISIBLE
+            return
+        }
         val bmp = runCatching {
             android.graphics.BitmapFactory.decodeFile(file.absolutePath)
         }.getOrNull() ?: return
-        // 圆形裁切：素材多半是方形（图标/照片），直接铺上去会破坏"圆点"观感。
-        // 用 BitmapShader + Canvas 手画圆，纯系统 API —— 不引入任何依赖，
-        // 也不必关心 androidx.core 的传递版本（上一版误写成
-        // android.graphics.drawable.RoundedBitmapDrawableFactory，包名不对导致
-        // 编译失败；那个类的正确包名是 androidx.core.graphics.drawable）。
-        val round = circularBitmap(bmp) ?: return
-        dot.background = android.graphics.drawable.BitmapDrawable(resources, round)
+
+        // 形状：圆形裁切（默认）或保留方形原图 —— 由用户在子页里选
+        val shown = when (CustomVisualPref.islandDotShape(this)) {
+            CustomVisualPref.DotShape.CIRCLE -> circularBitmap(bmp) ?: bmp
+            CustomVisualPref.DotShape.SQUARE -> bmp
+        }
+        handle.background = android.graphics.drawable.BitmapDrawable(resources, shown)
+        // 整圆就是图片本身，内部小亮核不再需要
+        core?.visibility = View.GONE
     }
 
     /** 把任意位图裁成居中的正方形再描一个圆形，返回新的圆形位图（失败返回 null）。 */

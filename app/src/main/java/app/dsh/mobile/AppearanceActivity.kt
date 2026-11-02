@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -20,6 +21,9 @@ import android.widget.Toast
  * 检测到主题/强调色/布局变化会自行重建。
  */
 class AppearanceActivity : ThemedActivity() {
+    /** 属于设置体系：启用「设置页背景图」（见 ThemedActivity.usesSettingsBackground）。 */
+    override val usesSettingsBackground: Boolean get() = true
+
 
     private var orientMode: OrientationMode = OrientationMode.PORTRAIT
     private var pageScale = DEFAULT_PAGE_SCALE
@@ -62,6 +66,8 @@ class AppearanceActivity : ThemedActivity() {
             return
         }
         refreshImageRows()
+        // 实时生效：本页本身也是设置体系页面，立刻重贴背景，不用返回刷新
+        if (pickingSettingsBg) applySettingsBackground()
     }
 
     override fun attachBaseContext(newBase: Context) {
@@ -172,7 +178,8 @@ class AppearanceActivity : ThemedActivity() {
             showImageRowDialog(isSettingsBg = true)
         }
         findViewById<LinearLayout>(R.id.rowIslandDotImage)?.setOnClickListener {
-            showImageRowDialog(isSettingsBg = false)
+            // 形状/尺寸/图片三项都在子页里，这里只负责跳转
+            startActivity(Intent(this, IslandStatusActivity::class.java))
         }
 
         findViewById<TextView>(R.id.valLayoutMode)?.text =
@@ -191,12 +198,32 @@ class AppearanceActivity : ThemedActivity() {
         refreshImageRows()
     }
 
-    /** 刷新两个素材行的右侧状态文字。 */
+    /**
+     * 刷新素材行的状态文字与缩略图预览。
+     *
+     * 预览直接读已落盘的私有文件（导入时就已缩到上限尺寸），不需要再解码原图。
+     */
     private fun refreshImageRows() {
         val none = getString(R.string.setting_image_none)
         val yes = getString(R.string.setting_image_set)
-        findViewById<TextView>(R.id.valSettingsBg)?.text =
-            if (CustomVisualPref.hasSettingsBg(this)) yes else none
+
+        val bgFile = CustomVisualPref.settingsBgFile(this)
+        findViewById<TextView>(R.id.valSettingsBg)?.text = if (bgFile != null) yes else none
+        val bgPreview = findViewById<ImageView>(R.id.imgSettingsBgPreview)
+        if (bgFile != null && bgPreview != null) {
+            val bmp = runCatching {
+                android.graphics.BitmapFactory.decodeFile(bgFile.absolutePath)
+            }.getOrNull()
+            if (bmp != null) {
+                bgPreview.setImageBitmap(bmp)
+                bgPreview.visibility = View.VISIBLE
+            } else {
+                bgPreview.visibility = View.GONE
+            }
+        } else {
+            bgPreview?.visibility = View.GONE
+        }
+
         findViewById<TextView>(R.id.valIslandDotImage)?.text =
             if (CustomVisualPref.hasIslandDot(this)) yes else none
     }
