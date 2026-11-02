@@ -59,25 +59,28 @@
                 android:background="@drawable/bg_card">
 
                 <!-- 预览容器：按所选形状/尺寸实时变化 -->
+                <!-- 预览：结构与主界面真实的 handleBar 完全一致 ——
+                     外层容器（默认背景 bg_dynamic_island_dot）+ 中心小亮核，
+                     渲染逻辑走同一份 IslandDotRenderer，做到"预览即所得"。 -->
                 <FrameLayout
                     android:layout_width="96dp"
                     android:layout_height="96dp">
 
-                    <ImageView
-                        android:id="@+id/imgDotPreview"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
-                        android:background="@drawable/bg_icon_chip_soft"
-                        android:visibility="gone" />
-
-                    <!-- 未选图时显示默认外观的示意 -->
-                    <View
-                        android:id="@+id/previewDefault"
+                    <LinearLayout
+                        android:id="@+id/previewDot"
                         android:layout_width="64dp"
                         android:layout_height="64dp"
                         android:layout_gravity="center"
-                        android:background="@drawable/bg_dynamic_island_dot" />
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:background="@drawable/bg_dynamic_island_dot">
+
+                        <View
+                            android:id="@+id/previewDotCore"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/bg_island_core_dot" />
+                    </LinearLayout>
                 </FrameLayout>
 
                 <TextView

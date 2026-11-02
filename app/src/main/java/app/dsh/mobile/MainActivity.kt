@@ -899,76 +899,10 @@ runCatching { (application as DshApp).supervisor.webUrl() }
      * 位置仅本次隐藏期间保持（重显工具栏后再收起回到上次位置，rotation/重建回默认）。
      */
     /**
-     * 收起态灵动岛（26dp 正圆）的自定义图标（外观与显示 → 收起态圆点图标）。
-     *
-     * 用户设了图之后，**整个 26dp 圆点就是那张图** —— 不再保留默认的
-     * 「深色圆 + 中心 8dp 小亮核」。实现上把圆点容器的背景换成圆形裁切的图，
-     * 并把原来那个小亮核隐藏；没设图时恢复默认外观（bg_dynamic_island_dot + 小核）。
-     *
-     * 为什么要还原而不是直接 `?: return`：用户可能在外观页「移除」图片后回到主界面，
-     * 此处不还原就会一直顶着旧图。
+     * 收起态灵动岛的渲染：统一交给 [IslandDotRenderer]，与设置子页里的预览
+     * 用同一套代码，保证"预览长什么样、收起就什么样"。
      */
-    private fun applyIslandDotImage(handle: View) {
-        val core = (handle as? android.view.ViewGroup)?.getChildAt(0)
-
-        // 尺寸对「默认外观」和「自定义图」都生效，所以先统一设好
-        val sizeDp = CustomVisualPref.islandDotSizeDp(this)
-        val px = (sizeDp * resources.displayMetrics.density).toInt()
-        handle.layoutParams = handle.layoutParams.apply {
-            width = px
-            height = px
-        }
-        handle.requestLayout()
-
-        val file = CustomVisualPref.islandDotFile(this)
-        if (file == null) {
-            // 恢复默认：外圈小光环 + 中心小亮核
-            handle.background = getDrawable(R.drawable.bg_dynamic_island_dot)
-            core?.visibility = View.VISIBLE
-            return
-        }
-        val bmp = runCatching {
-            android.graphics.BitmapFactory.decodeFile(file.absolutePath)
-        }.getOrNull() ?: return
-
-        // 形状：圆形裁切（默认）或保留方形原图 —— 由用户在子页里选
-        val shown = when (CustomVisualPref.islandDotShape(this)) {
-            CustomVisualPref.DotShape.CIRCLE -> circularBitmap(bmp) ?: bmp
-            CustomVisualPref.DotShape.SQUARE -> bmp
-        }
-        handle.background = android.graphics.drawable.BitmapDrawable(resources, shown)
-        // 整圆就是图片本身，内部小亮核不再需要
-        core?.visibility = View.GONE
-    }
-
-    /** 把任意位图裁成居中的正方形再描一个圆形，返回新的圆形位图（失败返回 null）。 */
-    private fun circularBitmap(src: android.graphics.Bitmap): android.graphics.Bitmap? =
-        runCatching {
-            val size = minOf(src.width, src.height)
-            // 先居中裁成正方形，避免非正方形素材被压扁
-            val square = android.graphics.Bitmap.createBitmap(
-                src,
-                (src.width - size) / 2,
-                (src.height - size) / 2,
-                size,
-                size,
-            )
-            val out = android.graphics.Bitmap.createBitmap(
-                size, size, android.graphics.Bitmap.Config.ARGB_8888,
-            )
-            val canvas = android.graphics.Canvas(out)
-            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                shader = android.graphics.BitmapShader(
-                    square,
-                    android.graphics.Shader.TileMode.CLAMP,
-                    android.graphics.Shader.TileMode.CLAMP,
-                )
-            }
-            val r = size / 2f
-            canvas.drawCircle(r, r, r, paint)
-            if (square !== src) square.recycle()
-            out
-        }.getOrNull()
+    private fun applyIslandDotImage(handle: View) = IslandDotRenderer.apply(this, handle)
 
     private fun setupHandleBar() {
         val handle = findViewById<View>(R.id.handleBar)

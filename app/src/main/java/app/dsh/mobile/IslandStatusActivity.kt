@@ -2,12 +2,6 @@ package app.dsh.mobile
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapShader
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Shader
-import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
@@ -33,8 +27,7 @@ class IslandStatusActivity : ThemedActivity() {
     override val usesSettingsBackground: Boolean get() = true
 
     private var shape = CustomVisualPref.DotShape.CIRCLE
-    private lateinit var imgPreview: ImageView
-    private lateinit var previewDefault: View
+    private lateinit var previewDot: android.view.ViewGroup
     private lateinit var txtHint: TextView
     private lateinit var txtSize: TextView
     private lateinit var seekSize: SeekBar
@@ -50,8 +43,7 @@ class IslandStatusActivity : ThemedActivity() {
 
         findViewById<ImageView>(R.id.btnBack).setOnClickListener { finish() }
 
-        imgPreview = findViewById(R.id.imgDotPreview)
-        previewDefault = findViewById(R.id.previewDefault)
+        previewDot = findViewById(R.id.previewDot)
         txtHint = findViewById(R.id.txtDotHint)
         txtSize = findViewById(R.id.valDotSize)
         seekSize = findViewById(R.id.seekDotSize)
@@ -102,69 +94,32 @@ class IslandStatusActivity : ThemedActivity() {
     }
 
     /**
-     * 刷新预览：形状与尺寸都体现在预览上 —— 用户改完马上看到效果，
-     * 不用先返回主界面把状态栏收起来才知道对不对。
+     * 刷新预览。
+     *
+     * 直接调 [IslandDotRenderer.apply] —— 与主界面渲染圆点用的是**同一份代码**，
+     * 所以"预览显示什么、收起后就是什么"：默认外观的中心小亮核、自定义图的
+     * 圆形/方形、以及尺寸，全都一致。
+     *
+     * 尺寸上限压到 80dp：预览框只有 96dp，按实际 dp 渲染时超大会溢出。
      */
     private fun refreshPreview() {
         val sizeDp = CustomVisualPref.islandDotSizeDp(this)
         txtSize.text = getString(R.string.setting_dot_size_value, sizeDp)
         seekSize.progress = sizeDp - CustomVisualPref.DOT_SIZE_MIN_DP
 
-        // 单选标记：当前形状那行显示勾，另一行隐藏
-        val circleMark = findViewById<ImageView>(R.id.chkShapeCircle)
-        val squareMark = findViewById<ImageView>(R.id.chkShapeSquare)
-        circleMark.visibility =
+        // 单选标记：当前形状那行显示勾，另一行隐藏（用 INVISIBLE 保持行高不跳）
+        findViewById<ImageView>(R.id.chkShapeCircle).visibility =
             if (shape == CustomVisualPref.DotShape.CIRCLE) View.VISIBLE else View.INVISIBLE
-        squareMark.visibility =
+        findViewById<ImageView>(R.id.chkShapeSquare).visibility =
             if (shape == CustomVisualPref.DotShape.SQUARE) View.VISIBLE else View.INVISIBLE
 
-        // 预览尺寸：按 dp 换算，最大不超过预览框（96dp）
-        // 预览按实际 dp 显示（上限 96dp，即预览框尺寸），让"大小"看得见
-        val px = dp(sizeDp.coerceAtMost(96))
-        imgPreview.layoutParams = imgPreview.layoutParams.apply {
-            width = px
-            height = px
-        }
-        imgPreview.requestLayout()
+        IslandDotRenderer.apply(this, previewDot, sizeDp.coerceAtMost(80), centerInParent = true)
 
-        val file = CustomVisualPref.islandDotFile(this)
-        if (file == null) {
-            imgPreview.visibility = View.GONE
-            previewDefault.visibility = View.VISIBLE
-            txtHint.setText(R.string.setting_image_none)
-            return
-        }
-        val bmp = runCatching { android.graphics.BitmapFactory.decodeFile(file.absolutePath) }
-            .getOrNull()
-        if (bmp == null) {
-            imgPreview.visibility = View.GONE
-            previewDefault.visibility = View.VISIBLE
-            txtHint.setText(R.string.setting_image_none)
-            return
-        }
-        val shown = if (shape == CustomVisualPref.DotShape.CIRCLE) circular(bmp) ?: bmp else bmp
-        imgPreview.setImageDrawable(BitmapDrawable(resources, shown))
-        imgPreview.visibility = View.VISIBLE
-        previewDefault.visibility = View.GONE
-        txtHint.setText(R.string.setting_image_set)
-    }
-
-    /** 圆形裁切（与主界面 applyIslandDotImage 同一算法，保证预览即所得）。 */
-    private fun circular(src: Bitmap): Bitmap? = runCatching {
-        val size = minOf(src.width, src.height)
-        val square = Bitmap.createBitmap(
-            src, (src.width - size) / 2, (src.height - size) / 2, size, size,
+        txtHint.setText(
+            if (CustomVisualPref.hasIslandDot(this)) R.string.setting_image_set
+            else R.string.setting_image_none,
         )
-        val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(out)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            shader = BitmapShader(square, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-        }
-        val r = size / 2f
-        canvas.drawCircle(r, r, r, paint)
-        if (square !== src) square.recycle()
-        out
-    }.getOrNull()
+    }
 
     private fun pickImage() {
         val intent = Intent(Intent.ACTION_GET_CONTENT).apply {

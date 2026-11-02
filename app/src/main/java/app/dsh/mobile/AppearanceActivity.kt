@@ -380,8 +380,13 @@ class AppearanceActivity : ThemedActivity() {
             }
         if (has) {
             b.setNeutralButton(R.string.action_remove_image) { _, _ ->
-                if (isSettingsBg) CustomVisualPref.clearSettingsBg(this)
-                else CustomVisualPref.clearIslandDot(this)
+                if (isSettingsBg) {
+                    CustomVisualPref.clearSettingsBg(this)
+                    // 实时生效：立刻把背景还原，不用等用户退出去再进来
+                    applySettingsBackground()
+                } else {
+                    CustomVisualPref.clearIslandDot(this)
+                }
                 refreshImageRows()
             }
         }
