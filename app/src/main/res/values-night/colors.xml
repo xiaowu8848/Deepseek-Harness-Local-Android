@@ -45,4 +45,6 @@
     <color name="island_success">#FF6EE7B7</color>
     <color name="island_muted">#FF9AA5B4</color>
     <color name="island_handle">#FF3A3A3C</color>
+    <!-- 按钮按压涟漪（暗色：淡白） -->
+    <color name="btn_ripple">#33FFFFFF</color>
 </resources>

@@ -307,6 +307,18 @@ runCatching { (application as DshApp).supervisor.webUrl() }
         }
     }
 
+    /** 同步贴纸的可见性：胶囊收起时贴纸也要跟着消失。 */
+    private fun setStickersVisible(visible: Boolean) {
+        val overlay = findViewById<ViewGroup>(R.id.statusBarOverlay) ?: return
+        for (i in 0 until overlay.childCount) {
+            val c = overlay.getChildAt(i)
+            if (c.tag == stickerTag) c.visibility = if (visible) View.VISIBLE else View.GONE
+        }
+    }
+
+    /** 贴纸 View 的标记：重建时据此清理旧贴纸（类内字段，避免为此新建 companion）。 */
+    private val stickerTag = "dsh_sticker"
+
     override fun onResume() {
         super.onResume()
         // NFC 读卡与屏幕录制都需要 Activity：把自身登记给两个 relay，
@@ -320,6 +332,8 @@ runCatching { (application as DshApp).supervisor.webUrl() }
         // 外观 → 收起态状态栏改完返回本页时，立即按新图片/形状/尺寸重绘，
         // 不必等用户手动收起再展开才看到效果
         runCatching { findViewById<View>(R.id.handleBar)?.let { applyIslandDotImage(it) } }
+        // 展开态状态栏：自定义背景图 + 贴纸，同样在返回本页时立即套用
+        runCatching { applyExpandedStatusBar() }
         val currentTheme = ThemePref.get(this)
         if (appliedTheme != null && appliedTheme != currentTheme) {
             appliedTheme = currentTheme
@@ -864,6 +878,9 @@ runCatching { (application as DshApp).supervisor.webUrl() }
                     // GONE → VISIBLE 期间 insets 回调可能已经跑过（那时设的
                     // layoutParams 对 GONE 视图不生效），这里补一次对齐
                     handle.requestApplyInsets()
+                    // 贴纸是胶囊上的装饰，胶囊收起后必须一起消失，
+                    // 否则会孤零零浮在顶部
+                    setStickersVisible(false)
                     handle.animate().alpha(1f).setDuration(140L).start()
                 }.start()
         } else {
@@ -881,6 +898,7 @@ runCatching { (application as DshApp).supervisor.webUrl() }
                     // ⚠️ 必须等一次布局后再取 width：GONE → VISIBLE 的同一帧里
                     // row.width 还是 0，pivotX 会被算成 0.5px，岛就从左上角展开
                     // 而不是从中心撑开。post 到下一帧即可拿到真实宽度。
+                    setStickersVisible(true)
                     row.post {
                         row.pivotX = row.width / 2f
                         row.pivotY = 0f
@@ -898,6 +916,60 @@ runCatching { (application as DshApp).supervisor.webUrl() }
      * 松手时若位移小于 touch slop（约 12px）则视为点击 → 唤回工具栏。
      * 位置仅本次隐藏期间保持（重显工具栏后再收起回到上次位置，rotation/重建回默认）。
      */
+    /**
+     * 展开态状态栏的外观：自定义背景图 + 用户贴的贴纸（v1.5.x）。
+     *
+     * 贴纸放在 `statusBarOverlay` 这层 FrameLayout 里 —— 它与胶囊共用一个容器，
+     * 位置尺寸完全一致，所以贴纸的相对坐标直接乘容器宽高即可，不必关心
+     * 状态栏被 insets 下移了多少。
+     *
+     * 贴纸不消费触摸，不会挡住胶囊上的返回/重启/设置按钮。
+     */
+    private fun applyExpandedStatusBar() {
+        val row = findViewById<View>(R.id.statusBarRow) ?: return
+        val overlay = findViewById<ViewGroup>(R.id.statusBarOverlay) ?: return
+
+        // —— 背景图：没有自定义图时回到默认胶囊 ——
+        val bgFile = CustomVisualPref.expandedBgFile(this)
+        val bmp = bgFile?.let {
+            runCatching { android.graphics.BitmapFactory.decodeFile(it.absolutePath) }.getOrNull()
+        }
+        if (bmp != null) {
+            row.background = android.graphics.drawable.BitmapDrawable(resources, bmp).apply {
+                gravity = android.view.Gravity.FILL
+            }
+        } else {
+            row.setBackgroundResource(R.drawable.bg_dynamic_island)
+        }
+
+        // —— 贴纸：清掉上一轮，再按当前列表重建 ——
+        for (i in overlay.childCount - 1 downTo 0) {
+            if (overlay.getChildAt(i).tag == stickerTag) overlay.removeViewAt(i)
+        }
+        val items = StickerPref.list(this)
+        if (items.isEmpty()) return
+        overlay.post {
+            val w = overlay.width
+            val h = overlay.height
+            if (w <= 0 || h <= 0) return@post
+            items.forEach { st ->
+                val stickerBmp = StickerPref.fileOf(this, st)?.let {
+                    runCatching {
+                        android.graphics.BitmapFactory.decodeFile(it.absolutePath)
+                    }.getOrNull()
+                } ?: return@forEach
+                val sizePx = (st.sizeDp * resources.displayMetrics.density).toInt()
+                val iv = ImageView(this)
+                iv.setImageBitmap(stickerBmp)
+                iv.layoutParams = android.widget.FrameLayout.LayoutParams(sizePx, sizePx)
+                iv.x = (st.xRatio * w - sizePx / 2f).coerceIn(0f, (w - sizePx).toFloat())
+                iv.y = (st.yRatio * h - sizePx / 2f).coerceIn(0f, (h - sizePx).toFloat())
+                iv.tag = stickerTag
+                overlay.addView(iv)
+            }
+        }
+    }
+
     /**
      * 收起态灵动岛的渲染：统一交给 [IslandDotRenderer]，与设置子页里的预览
      * 用同一套代码，保证"预览长什么样、收起就什么样"。

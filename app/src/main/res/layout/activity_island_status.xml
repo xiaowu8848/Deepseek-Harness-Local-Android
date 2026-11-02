@@ -107,7 +107,7 @@
                         android:layout_marginEnd="6dp"
                         android:text="@string/action_choose_image"
                         android:textAllCaps="false"
-                        android:background="@drawable/bg_btn_accent"
+                        android:background="@drawable/bg_btn_accent_ripple"
                         android:textColor="@color/on_accent" />
 
                     <Button
@@ -118,7 +118,7 @@
                         android:layout_marginStart="6dp"
                         android:text="@string/action_remove_image"
                         android:textAllCaps="false"
-                        android:background="@drawable/bg_btn_outline"
+                        android:background="@drawable/bg_btn_outline_ripple"
                         android:textColor="@color/text_primary" />
                 </LinearLayout>
             </LinearLayout>

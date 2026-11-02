@@ -139,10 +139,13 @@ open class ThemedActivity : Activity() {
         // 模糊：先降采样近似（见 ImageFx），再按用户设定不透明度铺上去。
         // 两者都实时套用，改滑块立刻能看出效果。
         val shown = ImageFx.blur(bmp, CustomVisualPref.settingsBgBlur(this))
+        // 注意：apply { } 里的 this 是 BitmapDrawable，不是 Activity ——
+        // 需要 Context 的调用必须提前算好，否则会把 Drawable 当 Context 传进去。
+        val bgAlpha = ImageFx.alphaOf(CustomVisualPref.settingsBgAlpha(this))
         root.background = android.graphics.drawable.BitmapDrawable(resources, shown).apply {
             // FILL：等比放大铺满、居中裁切，不拉伸变形
             gravity = android.view.Gravity.FILL
-            alpha = ImageFx.alphaOf(CustomVisualPref.settingsBgAlpha(this))
+            alpha = bgAlpha
         }
         dimCards(root)
     }

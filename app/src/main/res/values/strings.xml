@@ -1173,4 +1173,19 @@ The app will be restarted by the system to reload its group table — that is no
     <string name="setting_bg_blur">Blur</string>
     <string name="setting_bg_blur_sub">Higher values blur the background more</string>
     <string name="setting_bg_blur_value">%d</string>
+    <string name="setting_status_bar">Status bar</string>
+    <string name="setting_status_expanded">Expanded status bar</string>
+    <string name="setting_status_expanded_sub">Background image and stickers on the pill</string>
+    <string name="setting_status_collapsed">Collapsed status bar</string>
+    <string name="setting_status_collapsed_sub">Icon, shape and size when it shrinks to a dot</string>
+    <string name="setting_status_preview">Preview</string>
+    <string name="setting_status_bg">Background image</string>
+    <string name="setting_status_stickers">Stickers</string>
+    <string name="setting_sticker_desc">Drag to move; long-press to remove</string>
+    <string name="setting_sticker_hint">No stickers yet</string>
+    <string name="setting_sticker_count">%d sticker(s)</string>
+    <string name="action_add_sticker">Add sticker</string>
+    <string name="action_clear_stickers">Clear all</string>
+    <string name="action_remove_sticker">Sticker removed</string>
+    <string name="setting_status_bar_sub">Bar background, stickers and collapsed icon</string>
 </resources>

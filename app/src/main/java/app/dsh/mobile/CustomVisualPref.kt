@@ -47,6 +47,18 @@ object CustomVisualPref {
         prefs(context).edit().putInt(KEY_BG_BLUR, blur.coerceIn(0, BG_BLUR_MAX)).apply()
     }
 
+    /** 展开态状态栏背景图的文件名（空 = 用默认的近黑胶囊） */
+    private const val KEY_EXPANDED_BG = "expanded_bg_file"
+
+    fun expandedBgFile(context: Context): File? = file(context, KEY_EXPANDED_BG)
+
+    fun hasExpandedBg(context: Context): Boolean = expandedBgFile(context) != null
+
+    fun importExpandedBg(context: Context, uri: Uri): Boolean =
+        import(context, uri, KEY_EXPANDED_BG, "expanded_bg", BG_MAX_WIDTH, 0)
+
+    fun clearExpandedBg(context: Context) = clear(context, KEY_EXPANDED_BG)
+
     /** 收起态圆点的显示形状：圆形裁切，或保留原图的方形。 */
     enum class DotShape { CIRCLE, SQUARE }
 

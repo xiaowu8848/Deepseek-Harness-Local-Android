@@ -137,8 +137,8 @@ class AppearanceActivity : ThemedActivity() {
             startActivity(Intent(this, SettingsBgActivity::class.java))
         }
         findViewById<LinearLayout>(R.id.rowIslandDotImage)?.setOnClickListener {
-            // 形状/尺寸/图片三项都在子页里，这里只负责跳转
-            startActivity(Intent(this, IslandStatusActivity::class.java))
+            // 状态栏设置：里面再分展开态 / 收起态两个子页
+            startActivity(Intent(this, StatusBarActivity::class.java))
         }
 
         findViewById<TextView>(R.id.valLayoutMode)?.text =

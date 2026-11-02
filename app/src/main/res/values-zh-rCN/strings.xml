@@ -1180,4 +1180,19 @@
     <string name="setting_bg_blur">模糊程度</string>
     <string name="setting_bg_blur_sub">数值越大背景越模糊</string>
     <string name="setting_bg_blur_value">%d</string>
+    <string name="setting_status_bar">状态栏</string>
+    <string name="setting_status_expanded">展开态状态栏</string>
+    <string name="setting_status_expanded_sub">胶囊上的背景图与贴纸</string>
+    <string name="setting_status_collapsed">收起态状态栏</string>
+    <string name="setting_status_collapsed_sub">收缩成小圆点时的图标、形状与大小</string>
+    <string name="setting_status_preview">预览</string>
+    <string name="setting_status_bg">背景图</string>
+    <string name="setting_status_stickers">贴纸</string>
+    <string name="setting_sticker_desc">拖动可移动位置，长按可移除</string>
+    <string name="setting_sticker_hint">还没有贴纸</string>
+    <string name="setting_sticker_count">%d 张贴纸</string>
+    <string name="action_add_sticker">添加贴纸</string>
+    <string name="action_clear_stickers">清空贴纸</string>
+    <string name="action_remove_sticker">贴纸已移除</string>
+    <string name="setting_status_bar_sub">背景图、贴纸与收起态图标</string>
 </resources>

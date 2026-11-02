@@ -627,14 +627,14 @@
                 <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/setting_island_dot_image"
+                android:text="@string/setting_status_bar"
                 android:textColor="@color/text_primary"
                 android:textSize="15sp" />
 
                 <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/setting_island_dot_image_sub"
+                android:text="@string/setting_status_bar_sub"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp"
                 android:layout_marginTop="2dp" />

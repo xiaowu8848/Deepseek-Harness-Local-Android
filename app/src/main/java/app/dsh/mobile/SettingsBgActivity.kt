@@ -50,7 +50,7 @@ class SettingsBgActivity : ThemedActivity() {
         seekAlpha.progress = CustomVisualPref.settingsBgAlpha(this)
         seekBlur.progress = CustomVisualPref.settingsBgBlur(this)
 
-        seekAlpha.setOnSeekBarChangeListener(object : SimpleSeek {
+        seekAlpha.setOnSeekBarChangeListener(object : SimpleSeek() {
             override fun changed(v: Int) {
                 CustomVisualPref.setSettingsBgAlpha(this@SettingsBgActivity, v)
                 refreshPreview()
@@ -58,7 +58,7 @@ class SettingsBgActivity : ThemedActivity() {
                 applySettingsBackground()
             }
         })
-        seekBlur.setOnSeekBarChangeListener(object : SimpleSeek {
+        seekBlur.setOnSeekBarChangeListener(object : SimpleSeek() {
             override fun changed(v: Int) {
                 CustomVisualPref.setSettingsBgBlur(this@SettingsBgActivity, v)
                 refreshPreview()
