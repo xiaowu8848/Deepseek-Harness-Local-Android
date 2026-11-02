@@ -53,6 +53,7 @@ class SettingsActivity : ThemedActivity() {
         OrientationPrefs.applyToSettingsPage(this)
         setContentView(R.layout.activity_settings)
         applyResponsiveLayout()
+        applyCustomBackground()
 
 
         // —— 扩展：局域网访问 WebUI（v1.2.160/v1.2.161）——
@@ -322,6 +323,48 @@ class SettingsActivity : ThemedActivity() {
         )
     }
 
+    /**
+     * 应用用户自定义的设置页背景图（外观与显示 → 设置页背景图）。
+     *
+     * ## 为什么要给卡片降透明度
+     * 背景图铺在根布局上，而分组卡片 `bg_card` 是不透明的 surface 色 —— 直接贴图
+     * 等于图只从卡片缝隙里露出来，几乎看不见。这里把卡片背景改成同色的半透明版本，
+     * 让图能透上来一点，同时保住文字对比度（0.86 不透明度下深色正文仍清晰）。
+     *
+     * ## 为什么只作用于设置页
+     * 需求是"设置界面的背景图"。其它页面保持原样，避免一处设置影响全局可读性。
+     */
+    private fun applyCustomBackground() {
+        val file = CustomVisualPref.settingsBgFile(this) ?: return
+        val root = findViewById<ViewGroup>(R.id.settingsRoot) ?: return
+
+        val bmp = runCatching {
+            android.graphics.BitmapFactory.decodeFile(file.absolutePath)
+        }.getOrNull() ?: return
+
+        // FILL：等比放大铺满、居中裁切，不拉伸变形
+        root.background = android.graphics.drawable.BitmapDrawable(resources, bmp).apply {
+            gravity = android.view.Gravity.FILL
+        }
+
+        // 卡片改半透明，让背景图透上来
+        walkRowViews(root) { v ->
+            val bg = v.background
+            if (bg is android.graphics.drawable.GradientDrawable) {
+                val argb = runCatching { bg.color?.defaultColor }.getOrNull() ?: return@walkRowViews
+                val a = (android.graphics.Color.alpha(argb) * CARD_ALPHA_ON_BG).toInt()
+                bg.setColor(
+                    android.graphics.Color.argb(
+                        a,
+                        android.graphics.Color.red(argb),
+                        android.graphics.Color.green(argb),
+                        android.graphics.Color.blue(argb),
+                    ),
+                )
+            }
+        }
+    }
+
     /** 扩展中心行副标题：已激活扩展数（v1.4.58 起该行回到主页第一屏） */
     private fun refreshExtEntry() {
         val count = runCatching { ExtensionManager(this).activeCount() }.getOrDefault(0)
@@ -587,6 +630,9 @@ class SettingsActivity : ThemedActivity() {
 
 
     private companion object {
+        /** 设置页有背景图时，分组卡片的背景不透明度（0.86 下深色正文仍清晰） */
+        const val CARD_ALPHA_ON_BG = 0.86f
+
         /** 双栏断点（横屏）：Material 3 的 expanded 宽度（840dp） */
         const val TWO_COLUMN_MIN_WIDTH_LANDSCAPE_DP = 840
 

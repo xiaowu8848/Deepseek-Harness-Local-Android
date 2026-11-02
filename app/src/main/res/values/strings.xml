@@ -1153,4 +1153,12 @@ The app will be restarted by the system to reload its group table — that is no
     <string name="perm_group_other">Other</string>
     <string name="setting_perm_list_sub">Search, filter and revoke every declared permission</string>
     <string name="action_view">View</string>
+    <string name="setting_settings_bg">Settings background image</string>
+    <string name="setting_settings_bg_sub">Pick a picture to sit behind the settings page</string>
+    <string name="setting_island_dot_image">Collapsed island icon</string>
+    <string name="setting_island_dot_image_sub">Custom picture shown when the status bar collapses to a dot</string>
+    <string name="action_choose_image">Choose image</string>
+    <string name="action_remove_image">Remove</string>
+    <string name="setting_image_none">Not set</string>
+    <string name="setting_image_set">Set</string>
 </resources>

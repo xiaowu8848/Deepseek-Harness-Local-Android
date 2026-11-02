@@ -2,6 +2,7 @@ package app.dsh.mobile
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.ImageView
@@ -22,6 +23,46 @@ class AppearanceActivity : ThemedActivity() {
 
     private var orientMode: OrientationMode = OrientationMode.PORTRAIT
     private var pageScale = DEFAULT_PAGE_SCALE
+
+    /** 当前正在为哪一项选图：true = 设置页背景，false = 收起态圆点。 */
+    private var pickingSettingsBg = true
+
+    /**
+     * 拉起系统图库选一张图片。刻意用 `startActivityForResult` 而不是
+     * ActivityResult API —— 后者需要 androidx.activity 依赖，本项目没有引入
+     * （见 BackupActivity 同样的做法），不为一个选图功能新增依赖。
+     */
+    private fun pickImageFor(isSettingsBg: Boolean) {
+        pickingSettingsBg = isSettingsBg
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "image/*"
+            addCategory(Intent.CATEGORY_OPENABLE)
+        }
+        runCatching { startActivityForResult(intent, REQ_PICK_IMAGE) }.onFailure {
+            Toast.makeText(this, R.string.setting_image_none, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * 选图回调：选中后立刻把字节拷进私有目录（[CustomVisualPref]）。
+     * `content://` 授权只在本进程本次会话内有效，App 重启后原 URI 往往读不到，
+     * 所以不能只存 URI。
+     */
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQ_PICK_IMAGE) return
+        val uri = data?.data ?: return
+        val ok = if (pickingSettingsBg) {
+            CustomVisualPref.importSettingsBg(this, uri)
+        } else {
+            CustomVisualPref.importIslandDot(this, uri)
+        }
+        if (!ok) {
+            Toast.makeText(this, R.string.setting_image_none, Toast.LENGTH_SHORT).show()
+            return
+        }
+        refreshImageRows()
+    }
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrap(newBase))
@@ -126,6 +167,14 @@ class AppearanceActivity : ThemedActivity() {
             showLayoutModeDialog()
         }
 
+        // —— 自定义素材（v1.5.x）：设置页背景图 / 收起态圆点图 ——
+        findViewById<LinearLayout>(R.id.rowSettingsBg)?.setOnClickListener {
+            showImageRowDialog(isSettingsBg = true)
+        }
+        findViewById<LinearLayout>(R.id.rowIslandDotImage)?.setOnClickListener {
+            showImageRowDialog(isSettingsBg = false)
+        }
+
         findViewById<TextView>(R.id.valLayoutMode)?.text =
             getString(SettingsLayoutMode.current(this).labelRes)
         findViewById<TextView>(R.id.valAccent)?.text = getString(Accent.current(this).labelRes)
@@ -138,6 +187,18 @@ class AppearanceActivity : ThemedActivity() {
         super.onResume()
         // 从外观页返回时偏好可能已变（开关/朝向），重新对齐一次；值未变时是空操作
         OrientationPrefs.applyToSettingsPage(this)
+        // 选图是异步回填的（系统相册在另一个 Activity），回来时刷新"已设置/未设置"
+        refreshImageRows()
+    }
+
+    /** 刷新两个素材行的右侧状态文字。 */
+    private fun refreshImageRows() {
+        val none = getString(R.string.setting_image_none)
+        val yes = getString(R.string.setting_image_set)
+        findViewById<TextView>(R.id.valSettingsBg)?.text =
+            if (CustomVisualPref.hasSettingsBg(this)) yes else none
+        findViewById<TextView>(R.id.valIslandDotImage)?.text =
+            if (CustomVisualPref.hasIslandDot(this)) yes else none
     }
 
     private fun orientLabel(mode: OrientationMode): Int = when (mode) {
@@ -274,6 +335,32 @@ class AppearanceActivity : ThemedActivity() {
             .show()
     }
 
+    /**
+     * 素材行对话框：选择图片 / 移除。没有素材时不显示「移除」，避免空操作项。
+     *
+     * @param isSettingsBg true = 设置页背景图；false = 收起态圆点图
+     */
+    private fun showImageRowDialog(isSettingsBg: Boolean) {
+        val has = if (isSettingsBg) CustomVisualPref.hasSettingsBg(this)
+        else CustomVisualPref.hasIslandDot(this)
+        val title = getString(
+            if (isSettingsBg) R.string.setting_settings_bg else R.string.setting_island_dot_image,
+        )
+        val b = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setPositiveButton(R.string.action_choose_image) { _, _ ->
+                pickImageFor(isSettingsBg)
+            }
+        if (has) {
+            b.setNeutralButton(R.string.action_remove_image) { _, _ ->
+                if (isSettingsBg) CustomVisualPref.clearSettingsBg(this)
+                else CustomVisualPref.clearIslandDot(this)
+                refreshImageRows()
+            }
+        }
+        b.setNegativeButton(android.R.string.cancel, null).show()
+    }
+
     /** dp → px 小工具（对话框内边距用） */
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
@@ -292,6 +379,9 @@ class AppearanceActivity : ThemedActivity() {
         }
 
     private companion object {
+        /** 选图请求码（与 BackupActivity 的 REQ_* 分区，互不冲突） */
+        const val REQ_PICK_IMAGE = 4310
+
         const val PREFS_UI = DshApp.PREFS_UI
         const val KEY_PAGE_SCALE = "page_scale"
         const val DEFAULT_PAGE_SCALE = 90

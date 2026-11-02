@@ -895,8 +895,30 @@ runCatching { (application as DshApp).supervisor.webUrl() }
      * 松手时若位移小于 touch slop（约 12px）则视为点击 → 唤回工具栏。
      * 位置仅本次隐藏期间保持（重显工具栏后再收起回到上次位置，rotation/重建回默认）。
      */
+    /**
+     * 收起态灵动岛（26dp 正圆）的自定义图标（外观与显示 → 收起态圆点图标）。
+     *
+     * 默认外观是「深色圆 + 中间 8dp 小亮核」（bg_island_core_dot）。用户设了自定义图片时，
+     * 用图片替换那个小亮核（而不是整个圆）—— 这样圆点的尺寸、位置、点击/拖拽手感
+     * 全部不变，只换视觉标识，最小化对既有交互的影响。
+     *
+     * 图片已在导入时缩到 216px 以内（见 CustomVisualPref），这里直接解码即可。
+     */
+    private fun applyIslandDotImage(handle: View) {
+        val file = CustomVisualPref.islandDotFile(this) ?: return
+        val dot = (handle as? android.view.ViewGroup)?.getChildAt(0) ?: return
+        val bmp = runCatching {
+            android.graphics.BitmapFactory.decodeFile(file.absolutePath)
+        }.getOrNull() ?: return
+        // 圆形裁切：图片多半是方形（图标/照片），直接铺上去会破坏"圆点"观感
+        val round = android.graphics.drawable.RoundedBitmapDrawableFactory
+            .create(resources, bmp).apply { isCircular = true }
+        dot.background = round
+    }
+
     private fun setupHandleBar() {
         val handle = findViewById<View>(R.id.handleBar)
+        applyIslandDotImage(handle)
         val slop = 12f
         var rawX0 = 0f; var rawY0 = 0f
         var initTx = 0f; var initTy = 0f

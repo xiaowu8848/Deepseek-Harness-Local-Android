@@ -1159,4 +1159,12 @@ Die App wird vom System neu gestartet, um die Gruppentabelle neu zu laden — da
     <string name="perm_group_other">Sonstige</string>
     <string name="setting_perm_list_sub">Suchen, filtern und entziehen — alle Berechtigungen</string>
     <string name="action_view">Ansehen</string>
+    <string name="setting_settings_bg">Hintergrundbild der Einstellungen</string>
+    <string name="setting_settings_bg_sub">Ein Bild hinter der Einstellungsseite auswählen</string>
+    <string name="setting_island_dot_image">Symbol der eingeklappten Insel</string>
+    <string name="setting_island_dot_image_sub">Eigenes Bild, wenn die Statusleiste zu einem Punkt schrumpft</string>
+    <string name="action_choose_image">Bild auswählen</string>
+    <string name="action_remove_image">Entfernen</string>
+    <string name="setting_image_none">Nicht festgelegt</string>
+    <string name="setting_image_set">Festgelegt</string>
 </resources>

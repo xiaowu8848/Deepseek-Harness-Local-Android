@@ -1113,4 +1113,12 @@ A aplicação será reiniciada pelo sistema para recarregar a tabela de grupos �
     <string name="perm_group_other">Outras</string>
     <string name="setting_perm_list_sub">Pesquisar, filtrar e revogar — todas as permissões</string>
     <string name="action_view">Ver</string>
+    <string name="setting_settings_bg">Imagem de fundo das configurações</string>
+    <string name="setting_settings_bg_sub">Escolha uma imagem para ficar atrás da página de configurações</string>
+    <string name="setting_island_dot_image">Ícone da ilha recolhida</string>
+    <string name="setting_island_dot_image_sub">Imagem personalizada exibida quando a barra de status recolhe para um ponto</string>
+    <string name="action_choose_image">Escolher imagem</string>
+    <string name="action_remove_image">Remover</string>
+    <string name="setting_image_none">Não definido</string>
+    <string name="setting_image_set">Definido</string>
 </resources>
