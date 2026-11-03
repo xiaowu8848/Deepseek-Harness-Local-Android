@@ -946,3 +946,294 @@ token 每进程启动随机、不落盘（`AgentBridge.kt:128`），所以外部
 ### PR #88（未合并）
 `Masspedro` 的「添加移动端 MCP 设置控制台目录项」，**作者在 body 里明确标注 Draft 请勿合并**，
 且 base 是旧 main（`0b92ab94`）。暂不动。
+
+### 作者在合并后又推了 5 个提交（2026-11-03 复盘，未合并）
+PR #93 的 head 从 `db54d06d`（5 commits，已合入）变成 `c256597b`（10 commits）。
+新增 5 个提交里有 2 个被作者自己 revert，净留下的是
+`feat(appearance): 模糊改四档预设、卡片底色不透明度可调（保守重做）`
+（模糊 0~24 连续滑块 → 四档 0/25/50/75，新增 `settingsBgControlAlpha`）。
+
+**决定：不合并，让作者自己修。** 已在 PR 上评论（
+`https://github.com/Soodok/Deepseek-Harness-Local-Android/pull/93#issuecomment-6594931569`）。
+
+**① 四档模糊存不进去（真 bug，按代码推演）**
+`CustomVisualPref.kt:82-84` 写入端 `coerceIn(0, BG_BLUR_MAX)`（`BG_BLUR_MAX = 24`），
+而 `SettingsBgActivity.kt:55-58` 传的是百分比 `0/25/50/75` → 25、50 都被截成 24；
+`:69-71` 读出端期望值在 `BG_BLUR_PRESETS`（0/25/50/75）里，24 不在列表 →
+走旧值换算 `24*100/24 = 100` → 返回 **75**。故四档只有 0 与 75 生效。
+修法：`coerceIn(0, 100)` 或就近吸附到合法档位。
+
+**② 新 head 会把我修掉的 5 处全部带回**（`git show c256597b:...` 逐个核过，
+`removeByFile`/`moveByFile`、`postDelayed`/`LONG_PRESS_MS`、`mutate()`、
+「命中就直接返回」缓存注释 全部 grep 计数为 0）。其中 `sampleSizeFor`
+（`CustomVisualPref.kt:209-219`）现状是
+`val tooTall = maxH > 0 && nh < maxH && maxW <= 0` —— 圆点导入传
+`(DOT_MAX_PX, DOT_MAX_PX)` 两个上限都非 0，`tooTall` 恒 false，扁长图会一路降到
+高度只剩十几像素。
+
+**③ 合并会有真冲突**（不是快进）：`git merge origin/main` 在
+`app/src/main/java/app/dsh/mobile/ImageFx.kt` 冲突 —— 我这边的「缓存键先算先查」
+与作者那边的 `blurStrengthOf(blurPercent)` 首行撞同一位置。合并时须两个都保留：
+先 `val strength = blurStrengthOf(blurPercent)`，再算缓存键并查缓存。
+
+**④ 建议但不算 bug**：`blurStrengthOf(25/50/75)` = 6/12/18，四档实际只用到 0~18，
+没吃到 24 那档。可按档位映射（0/8/16/24）而非线性百分比。
+
+## 十四、P0-3 btsnoop 二进制解析（v1.5.0-beta.16）
+
+### 做了什么
+把 `bt op=log` 从「只能读文本 verbose 日志」扩成「也能解析 HCI 帧级二进制日志」。
+
+- 新增 `app/src/main/java/app/dsh/mobile/engine/cap/BtsnoopParser.kt`：纯字节解析器，
+  不碰 Android API（因此可脱离设备用 Python 复刻逐字节验证）。
+- `RadioCap.kt` 的 `btLog` 增加 `format=binary` 分支 → `btLogBinary()`。
+- `EndpointCatalog.kt` 补参数说明/示例/限制。
+- 新探针 `scripts/probes/_test_btsnoop_parser.py`（44 项）。
+
+### 格式事实（实测确认，别凭记忆改）
+- 文件头 16 字节：`>8sII` = magic `btsnoop\0` + version(1) + datalink(**1002** = H4)
+- 每条记录：`>IIIIQ` = orig_len@0 | incl_len@4 | flags@8 | drops@12 | **timestamp@16（8 字节）**
+- flags bit0 = 方向（0=host→controller，1=controller→host）
+- 载荷首字节 = H4 类型：0x01 Command / 0x02 ACL / 0x03 SCO / 0x04 Event
+- 真机样本 `btsnoop_hci_20261031_050524.cfa`（24535 字节）= 447 包（cmd 223 / event 224）
+
+### 途中修掉的两个真 bug（均有反向验证）
+1. **`Privilege.runSu` 管道死锁**：旧码「先 `waitFor(8s)` 再 `readText()`」。
+   子进程写满 64KB 管道缓冲即阻塞，我们阻塞在 waitFor → 双方互等 → 超时返回 null。
+   binary 模式要回 349KB base64 **必定失败**（真机报 `cannot read btsnoop (root required)`），
+   text 模式只回几行所以一直没暴露。改为：起线程抽流 → `waitFor` → `join(1s)`。
+2. **时间戳偏移读错**：旧码从 `off + 12` 读时间戳高位，而 @12 是 drops 字段。
+   真机 `ts` 显示 `14892293`（≈0.17 天），正确应为 `63961914704019956`（≈740299 天，即 2026 年）。
+   已修两处读取点（`off + 16` / `off + 20`）。
+
+### `resyncTail` 的两个坑（都是探针抓出来的）
+- **扫描窗口太窄**：只在 `RECORD_SIZE`(24) 内试探，切口落进长 ACL 载荷（255B+）中间时
+  报告下一个记录边界在几十上百字节后，直接错过。实测 cut=1500 必失败。改为扫 `RESYNC_SCAN=4096`。
+- **只按「包数最多」评分会选错**：任意偏移都可能碰巧走出自洽链。改为三项校验
+  （残余 0 字节 + 每包首字节 ∈ 1..5 + 时间戳不倒退）后按**吃掉字节数最多**取胜。
+  合成流 11 个切口 + 真机 6 个切口全部正确。
+
+### 探针设计教训
+反证时发现两条契约检查**不会变红**：`"4096" in parser` 命中的是注释里的数字，
+`ts_hi_16` 复刻的是 Python 侧逻辑、碰不到 Kotlin 本体。已改为锚定
+`private const val RESYNC_SCAN = 4096` 与 `readInt(data, off + 16)` 的**实际出现次数**。
+教训：契约检查必须锚定真正被执行的代码形态，注释与复刻都不算。
+
+### 真机验证（OPPO PLZ110 / Android 16 / KernelSU 4.1.3）
+| 用例 | 结果 |
+|---|---|
+| 默认尾段 | `packets_total=5541 trailing=0`，`ts=63961914704019956` |
+| `filter=Connection` | `packets_matched=165`（从 5895 中筛出）|
+| `hex=1` | `"hex":"040f040c010408"` |
+| `full=true` | `datalink=1002`、`packets_total=9862`、`trailing=0` |
+| text（回归） | 仍正常返回 `.log` 行 |
+
+### 回归与发布
+- 全量 py 探针 **41 通过 / 1 失败**（`_test_corepack_hardlink.py`：
+  `-Ppackage=noruntime` 缺 `runtime.zip` 的已知基线失败）
+- i18n / no-bulk-perms / git-hygiene 三门禁全过
+- 构建 `BUILD SUCCESSFUL in 84s`；真机 `versionName=1.5.0-beta.16`
+- 提交 `a2484c5`，推送 `d2dc544..a2484c5 main -> main`，tag `v1.5.0-beta.16` 已推
+
+## 十五、P0-4 按 UID 断网 / 查流量（v1.5.0-beta.17）
+
+### 做了什么
+- 新增 `app/src/main/java/app/dsh/mobile/engine/cap/NetCap.kt`，`op=status|list|block|unblock`。
+- 端点 `GET/POST /dev/net`，登记进 `EndpointCatalog.kt`，走既有 `dev net` 统一入口。
+- 能力开关 `cap.net`（与 wifi/bt 分开授权、默认关闭）；权限中心加 `rowCapNet`/`swCapNet`
+  与 `ic_globe`；五语种 `setting_cap_net` / `_sub` / `_need`。
+- 探针 `scripts/probes/_test_net_block.py`（47 项，含三处反向验证）。
+
+### 两档能力
+| 档 | 做法 | 需要 |
+|---|---|---|
+| 查询流量 | `NetworkStatsManager.querySummary`（mobile + wifi 两个 type 分别查再合并）| Usage Access（不需 root）|
+| 封锁 | `iptables -I OUTPUT 1 -m owner --uid-owner <uid> -j DROP -m comment --comment dsh-netblock` | root |
+
+### 三个真机踩出来的坑（务必保留在注释里）
+1. **回读格式与命令行不同**：`iptables -vL` 打印 `owner UID match 10360`，
+   不是命令里那种 `uid-owner 10360`。第一版按后者 grep → 规则在链上也读回 null →
+   接口报 `rule inserted but could not be read back; state unknown`。
+   修法：用 `iptables -S OUTPUT`（还原命令行语法）判存在性，`-vL` 取计数。
+2. **不能拿 ping 判成败**：`su <uid> -c ping` 拿不到 ICMP raw socket，
+   **有规则没规则都 100% 丢包**。我先当成功判据，后来做「删规则基线对照」发现删了也丢包
+   才识破 —— 典型假阳性。改用回读 `pkts` 计数器。
+3. **列偏移**：不带 `--line-numbers` 时第 0 列 = pkts、第 1 列 = bytes。
+
+### 两个设计约束
+- **必须插链首** `-I OUTPUT 1`：ColorOS 的 OUTPUT 前面挂着 `customize_OUTPUT`、
+  `RESTRICTION_SSDP_CHAIN`、`oem_out`、`fw_OUTPUT`、`st_OUTPUT`、`bw_OUTPUT`
+  与两条 BPF skfilter（`prog_oplus-netd_skfilter_egress_*`），追加末尾会被提前 ACCEPT。
+- **拒绝封自己 / uid 0**：否则 AI 一执行就把自己断网再也调不回来；要封须显式 `allowSelf=true`。
+
+### 真机验证（v1.5.0-beta.17）
+| 用例 | 结果 |
+|---|---|
+| `op=status`（初始）| `blocked_count=0` |
+| `op=list` | `uids_total=77`，返回 shell / 网易UU / B站 / QQ / 微信真实用量 |
+| `op=block`（抖音）| `uid=10360 verified=true` |
+| `op=status` | `blocked_count=1` 且带包名 |
+| 幂等复 block | `already_blocked=true` |
+| 让 uid 10360 发流量后 | `packets_dropped=5 bytes_dropped=300` |
+| `op=unblock` | `was_blocked=true` → status 归零 |
+| 封自己 | `refusing to block myself (uid 10488)` |
+| `dev net` | 自描述正常渲染（含五条限制）|
+
+### 尚未覆盖
+- IPv6（`ip6tables` 未接）。
+- 规则**重启不持久**（`iptables-save` 里没有我们的 owner 规则）。
+
+### 回归与发布
+- 全量 py 探针 **42 通过 / 1 失败**（`_test_corepack_hardlink.py` 已知基线）
+- 门禁全过；反向验证三处（回读写法 / `-I` 改 `-A` / 去掉防自封）均能让探针立刻变红
+- 提交 `500a854`，推送 `d9678b0..500a854`，tag `v1.5.0-beta.17` 已推
+
+## 十六、P1/P2 六项能力（v1.5.0-beta.18）
+
+按 `docs/CAPABILITY_MAP.md` 的 P1/P2 清单逐项落地，一次性交付 6 个新端点。
+
+### 端点总表
+
+| 端点 | 能力 | 档 | 文件 |
+|---|---|---|---|
+| `POST /dev/ble` | 手机当 BLE 外设（GATT Server） | A | `cap/BlePeripheralCap.kt` |
+| `POST /dev/bt-hid` | 手机冒充蓝牙键盘 | A（OEM 视情况）| `cap/BtHidCap.kt` |
+| `POST /dev/screenwatch` | 屏幕变化检测（不存图/视频） | B | `cap/ScreenWatchCap.kt` |
+| `POST /dev/record` `op=audio` | 录其他 App 的声音 | B | `cap/RecordCap.kt` 扩展 |
+| `POST /dev/pulse` | 振动摩斯电码 | A | `cap/PulseCap.kt` |
+| `POST /dev/scene` | 传感器场景推断 | A | `cap/PulseCap.kt` |
+| `POST /dev/doze` | Doze 白名单自助 | C | `cap/PulseCap.kt` |
+
+### ★ 关键实测结论：蓝牙 HID 在这台机器上可用
+`docs/CAPABILITY_MAP.md` 原本写「多数 OEM 需 BLUETOOTH_PRIVILEGED，实测成功率待验」。
+真机实测（OPPO PLZ110 / Android 16 / KernelSU）：
+
+```
+op=probe → {"profile_constant_ok":true, "get_profile_proxy_called":true,
+            "proxy_obtained":true, "bluetooth_privileged_granted":false}
+op=register → {"ok":true, "registered":true}
+```
+
+**未授 `BLUETOOTH_PRIVILEGED` 也能注册成功** —— 这台 OPPO 没封死 HID_DEVICE。
+但结论只对这台机器成立，其它 OEM 仍需各自 `op=probe` 验。
+
+### 各能力的设计要点
+- **ble**：与 `/dev/bt` 方向相反（那个是手机去连别人，这个是被别人连）。
+  广播载荷上限 31 字节，名字走 scan response。客户端写进来的内容要自己
+  `op=events` 轮询 —— Android 不会主动通知 AI。
+- **bt-hid**：`probe` 把三个维度拆开报（profile 常量 / proxy 能否拿到 / 权限），
+  失败原因不含糊。只注册键盘（`SUBCLASS1_KEYBOARD`），`op=mouse` 会被系统拒。
+  `type` 仅 US 布局 ASCII，非 ASCII 跳过而不是猜。
+- **screenwatch**：MediaProjection → VirtualDisplay → ImageReader（默认 1/8 边长）。
+  只返回 `changed_ratio` / `mean_delta` / `hot_blocks`，**不存任何像素**。
+  补的是「截图太贵、无障碍节点树拿不到像素」之间那层。
+- **record op=audio**：`AudioPlaybackCaptureConfiguration` 匹配 MEDIA/GAME/UNKNOWN。
+  输出 16-bit PCM 单声道裸流（故意不引编码器）。**静音不等于失败** ——
+  目标 App 可拒绝被捕获、DRM 内容录不到，用实际写入字节数判断。
+- **pulse**：点=1 单位、划=3、符号间=1、词间=7，末尾间隔清零。
+  短码 ok/fail/wait/done/ask/sos 比单字母好记。
+- **scene**：**规则推断不是训练模型**，每个标签都在 `facts` 里附依据的具体数字。
+  加速度用三轴模长避免方向变化造成假运动；气压与上一次调用比才有 delta。
+- **doze**：`dumpsys deviceidle whitelist +/-<pkg>`，并用
+  `isIgnoringBatteryOptimizations` 回报**生效状态**而不只是命令返回值。
+
+### 真机验证（v1.5.0-beta.18）
+| 用例 | 结果 |
+|---|---|
+| `pulse text=ok` | `code="..." segments=6 duration_ms=300` |
+| `pulse text=done unitMs=80` | `code="-.." duration_ms=560` |
+| `scene windowMs=1000` | `scene=["dark","still"]` + 英文 facts |
+| `doze op=add` | `command_ok=true now_ignoring=true raw="Added: app.dsh.mobile"` |
+| `ble op=start name=DSH-Test` | `advertising=true`；status 复查 `running=true` |
+| `bt-hid op=probe` | `proxy_obtained=true` → 可注册 |
+| `bt-hid op=register` | `registered=true` |
+| `screenwatch op=start`（无授权）| `{"error":"no_permission"}` |
+| `record op=audio`（无授权）| `{"error":"no_permission","hint":"POST op=request first..."}` |
+
+### 途中修掉的两个问题
+1. **facts 里有中文** —— `check-i18n.py` 的 CJK-in-Kotlin-string 门禁拦下
+   `PulseCap.kt:239`。facts 是给 AI 读的结构化输出，已改英文。
+2. **EndpointCatalog 又写进裸换行** —— `params = "...diff` 后直接折行导致
+   Kotlin 字符串断裂。用 `chr(92)` 重建 `\n` 并按行号精确替换。
+   **这是同一个坑第二次踩**，以后批量改 Kotlin 字符串必须用 chr(92) 构造转义。
+
+### 尚未做
+- P1-3 上下文总线 + 主动提醒闸门（最大差异化方向，工作量最大）
+- P1-4 「AI 的手」可视化悬浮窗
+- P2-2 通话筛选 / P2-3 通知中枢摘要 / P2-5 精确闹钟
+- `screenwatch` 与 `audio` 的**授权路径尚未真机跑通**（只验了无授权时的如实报错，
+  授权需要在前台 Activity 点系统弹窗，adb 无法代替点击）
+
+### 门禁与发布
+- 新探针 `scripts/probes/_test_new_capabilities.py`（62 项）
+- 全量 py 探针 **43 通过 / 1 失败**（`_test_corepack_hardlink.py` 已知基线）
+- i18n / no-bulk-perms / git-hygiene 全过；构建 `BUILD SUCCESSFUL`
+- 提交 `824bf17`，推送 `d46dfef..824bf17`，tag `v1.5.0-beta.18` 已推
+
+## 十七、上下文总线 + 提醒闸门 + 「AI 的手」（v1.5.0-beta.20）
+
+### 三个新端点
+| 端点 | 能力 | 文件 |
+|---|---|---|
+| `GET/POST /dev/context` | 上下文总线（时间/屏幕/电池/网络/前台/通知概况 + should_nudge）| `cap/ContextCap.kt` |
+| `POST /dev/nudge` | 主动提醒闸门（默认不打扰）| `cap/ContextCap.kt` |
+| `GET /dev/notify-digest` | 通知摘要（按 App 聚合计数）| `cap/ContextCap.kt` |
+| `POST /dev/hand` | 「AI 的手」可视化（tap/path/clear/hide/debugbg）| `cap/HandOverlay.kt` |
+
+### 提醒闸门的五道关（默认全拒）
+1. 静音时段 23:00–07:00
+2. 息屏
+3. 锁屏
+4. Doze（后台被冻结，提醒会无限延迟）
+5. 同 key 30 分钟冷却
+
+`importance >= 8` 可穿过 1–3（`bypass=true`）；`force=true` 全强制。
+拒绝时 `reasons` 列出**具体哪条拦的**。
+
+### ★「AI 的手」踩的五个坑（全部真机定位，注释里都写了）
+1. **View 必须主线程建** —— `View` 构造内部 `new Handler()`，在桥的
+   `AgentBridge-req` 线程里抛 `Can't create handler inside thread ... Looper.prepare()`。
+   整段丢 mainHandler + `CountDownLatch` 等结果。
+2. **必须借无障碍服务的 WindowManager** —— `TYPE_ACCESSIBILITY_OVERLAY` 需要
+   服务的 window token。用 `applicationContext` 会报
+   `Unable to add window -- token null is not valid`，
+   **这个错误信息极易被误读成「无障碍服务没跑」**。
+3. **不要加 `FLAG_LAYOUT_NO_LIMITS` / `FLAG_LAYOUT_IN_SCREEN`** ——
+   加上后窗口被重新居中：请求 (600,1320) 实际画到 (1061,303)。
+4. **要减窗口原点** —— `getLocationOnScreen` 实测返回 `[0,135]`
+   （状态栏 + 挖孔高度），不减的话每个点整体下移 135px。
+5. **纯色圆点在深色 UI 上几乎看不见** —— 加白色外描边 + 白色脉冲环。
+   排查手段：`op=debugbg on` 铺半透明红，先确认窗口可见，再定位坐标。
+
+### 途中修掉的两个 bug
+- **`by_app` 恒为空**：`context()` 里传了 `limit=0`，`.take(0)` 返回空列表。
+  改传 8，并在 `notificationDigest` 里 `coerceAtLeast(1)`。
+- **字段名不对齐**：`NotifyCap.toJson` 写的是 `posted_at`，我按 `time` 取。
+
+### 新增工具
+`scripts/fix-kotlin-string-newlines.py` —— 修 Kotlin 字符串字面量里的裸换行。
+**同一个坑已踩三次**（AI_CONTEXT 十四、十六、十七），这次做成脚本：
+判据是「一行里未转义双引号个数为奇数」，命中就把下一行拼上来并补 `\n` 转义。
+
+### 真机验证（v1.5.0-beta.20）
+| 用例 | 结果 |
+|---|---|
+| `GET /dev/context` | 00:42 / Awake / 电量 82% / wifi / 前台 app.dsh.mobile / 通知 67 条 6 App |
+| `nudge importance=5` | `allow=false, reasons=["quiet hours"]` |
+| `nudge importance=9` | `allow=true, bypass=true` |
+| `nudge` 同 key | `cooldown active: last alert 294s ago (limit 1800s)` |
+| `notify-digest` | `total=66 apps=6`（QQ 36 / DSH 16 / android 8 …）|
+| `hand tap x=400 y=900` | 截图实测中心 **(399,899)**，偏移 -1px |
+| `hand debugbg on` | 全屏偏红，确认窗口可见 |
+
+### 门禁
+`_test_new_capabilities.py` 扩到 79 项；三处反向验证全部变红。
+全量 py 探针 43 通过 / 1 失败（`_test_corepack_hardlink.py` 已知基线）；
+i18n / bulk-perms / git-hygiene 全过。
+提交 `338db7e`，tag `v1.5.0-beta.20`。
+
+### 尚未做
+- P2-2 通话筛选（`CallScreeningService`，需用户设为默认来电筛选应用）
+- P2-5 精确闹钟（`SCHEDULE_EXACT_ALARM`）
+- `screenwatch` / `audio` 的**授权路径尚未真机跑通**（只验了无授权时的如实报错，
+  授权需在前台点系统弹窗，adb 无法代替点击）
