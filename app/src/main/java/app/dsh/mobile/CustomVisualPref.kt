@@ -40,8 +40,18 @@ object CustomVisualPref {
     val BG_BLUR_PRESETS = listOf(0, 25, 50, 75)
     const val BG_BLUR_DEFAULT = 0
 
-    /** 档位百分比 → 内部强度（0~24）。 */
-    fun blurStrengthOf(percent: Int): Int = percent.coerceIn(0, 100) * BG_BLUR_MAX / 100
+    /**
+     * 档位百分比 → 卷积强度（0~24）。
+     *
+     * 四档**按档等距**映射到 0 / 8 / 16 / 24，而不是按百分比线性换算 ——
+     * 线性时 75% 只能得到 18，最强那档反而用不满，观感上「75% 和 50% 差不多」。
+     * 非预设值（滑块停在中间时）仍走线性换算。
+     */
+    fun blurStrengthOf(percent: Int): Int {
+        val idx = BG_BLUR_PRESETS.indexOf(percent)
+        if (idx >= 0) return idx * BG_BLUR_MAX / (BG_BLUR_PRESETS.size - 1)
+        return percent.coerceIn(0, 100) * BG_BLUR_MAX / 100
+    }
 
     /**
      * 有背景图时卡片底色的不透明度（0~100）。

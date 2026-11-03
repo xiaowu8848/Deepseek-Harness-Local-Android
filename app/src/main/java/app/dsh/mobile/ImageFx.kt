@@ -118,6 +118,30 @@ object ImageFx {
     }
 
     /**
+     * 只查缓存、**绝不计算**（供主线程调用）。
+     *
+     * 进设置页时先用它：命中就直接显示模糊版；没命中返回 null，由调用方先用原图
+     * 顶上，再把卷积丢到后台。这样主线程永远不会被逐像素运算阻塞。
+     */
+    fun cachedOnly(
+        context: android.content.Context,
+        srcFile: File,
+        strength: Int,
+        maxEdge: Int = MAX_EDGE,
+    ): Bitmap? {
+        if (strength <= 0) return null
+        val cached = File(
+            File(context.filesDir, "appearance/cache"),
+            "bg_${srcFile.lastModified()}_${strength}_$maxEdge.png",
+        )
+        if (!cached.isFile) return null
+        return runCatching {
+            android.graphics.BitmapFactory.decodeFile(cached.absolutePath)
+        }.getOrNull()
+    }
+
+
+    /**
      * 带缓存的高斯模糊：同一张图 + 同一强度只算一次。
      *
      * 高斯是逐像素运算，整屏尺寸算一遍要几百毫秒；设置页每次 onResume 都重贴背景，

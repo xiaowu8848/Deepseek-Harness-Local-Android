@@ -132,23 +132,45 @@ open class ThemedActivity : Activity() {
             restoreCardOpacity(root)
             return
         }
-        // 真高斯模糊 + 缓存：同一张图同一强度只算一次，否则每次 onResume
-        // 都要跑一遍逐像素卷积，切页面会明显卡。
-        val shown = ImageFx.cachedBlur(
-            this,
-            file,
-            // 存的是档位百分比，这里换算成卷积强度（ImageFx 内部仍按强度计算）
-            CustomVisualPref.blurStrengthOf(CustomVisualPref.settingsBgBlur(this)),
-        ) ?: return
+        // ⚠️ 逐像素卷积**绝不能在主线程跑**：整屏尺寸算一遍要几百毫秒，
+        // 进设置页当场卡住（真机反馈过「点设置直接崩」）。
+        //
+        // 策略：缓存命中直接用；没命中先用**原图**顶上（瞬时可见），
+        // 后台算完再替换。用户看到的是「先清晰、随即变模糊」，而不是白屏等待。
+        val bgAlpha = ImageFx.alphaOf(CustomVisualPref.settingsBgAlpha(this))
+        val strength = CustomVisualPref.blurStrengthOf(CustomVisualPref.settingsBgBlur(this))
+
         // 注意：apply { } 里的 this 是 BitmapDrawable，不是 Activity ——
         // 需要 Context 的调用必须提前算好，否则会把 Drawable 当 Context 传进去。
-        val bgAlpha = ImageFx.alphaOf(CustomVisualPref.settingsBgAlpha(this))
-        root.background = android.graphics.drawable.BitmapDrawable(resources, shown).apply {
-            // FILL：等比放大铺满、居中裁切，不拉伸变形
-            gravity = android.view.Gravity.FILL
-            alpha = bgAlpha
+        fun install(bmp: android.graphics.Bitmap) {
+            root.background = android.graphics.drawable.BitmapDrawable(resources, bmp).apply {
+                // FILL：等比放大铺满、居中裁切，不拉伸变形
+                gravity = android.view.Gravity.FILL
+                alpha = bgAlpha
+            }
         }
+
+        val cacheHit = ImageFx.cachedOnly(this, file, strength)
+        val immediate = cacheHit ?: runCatching {
+            android.graphics.BitmapFactory.decodeFile(file.absolutePath)
+        }.getOrNull() ?: return
+        install(immediate)
         dimCards(root)
+
+        // 缓存未命中：后台卷积，算完回主线程替换（已销毁或已换图则放弃）
+        if (cacheHit == null && strength > 0) {
+            val token = file.lastModified() to strength
+            bgBlurTokens[root] = token
+            Thread({
+                val blurred = ImageFx.cachedBlur(this, file, strength)
+                if (blurred == null) return@Thread
+                runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
+                    if (bgBlurTokens[root] != token) return@runOnUiThread
+                    install(blurred)
+                }
+            }, "bg-blur").apply { isDaemon = true }.start()
+        }
     }
 
     /** 卡片降透明度，让背景图透上来（86% 下深色正文仍清晰）。 */
