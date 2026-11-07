@@ -93,6 +93,10 @@ open class ThemedActivity : Activity() {
         // AndroidManifest 里 activity 的 theme 属性，所以由 usesSettingsBackground
         // 统一决定，而不是靠每个 Activity 在 Manifest 里各写一遍。
         setTheme(if (usesSettingsBackground) R.style.Theme_Dsh_MD3 else R.style.Theme_Dsh)
+        // Android 12+ 覆盖系统 Monet 动态色；API 26-30 保持蓝色回退主题。
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            com.google.android.material.color.DynamicColors.applyToActivityIfAvailable(this)
+        }
         super.onCreate(savedInstanceState)
         ThemeManager.applyBars(this)
     }
