@@ -103,18 +103,7 @@ _VERSIONED = re.compile(r"^(?P<name>.+?)-\d[^-]*-r\d+$")
 
 
 def _read_index(path):
-    """读索引文件，三种格式都吃：
-
-      1. `P:<name>`（APKINDEX 原始格式）
-      2. `name-<version>-r<release>`（仓库快照 apkindex-names.txt 用的格式）
-      3. 纯包名（一行一个）
-
-    ⚠️ 第 2 种必须剥版本：仓库快照是 `python3-3.12.16-r0` 这种，
-    而映射表里写的是包名 `python3`。不剥就整张表对不上，
-    表现为「所有映射目标都不存在」的假红（实测 26319 行全部带版本）。
-    注意两种都加进集合：裸名用于「本来就该原样透传」的包，
-    剥版本后的名字才是映射表实际查的那个。
-    """
+    """读索引文件：支持 `P:<name>` 行、`name-<ver>-r<n>` 快照行，以及纯包名清单。"""
     names = set()
     with io.open(path, encoding="utf-8", errors="replace") as f:
         for ln in f:
